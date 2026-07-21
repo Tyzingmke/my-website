@@ -18,9 +18,9 @@ export const nav = [
 ];
 
 export const stats = [
-  ["KES 0+", "hosting-start mindset"],
-  ["3+", "demo systems planned"],
-  ["2", "revision rounds"],
+  ["08", "story milestones"],
+  ["07", "demo project systems"],
+  ["02", "revision rounds"],
   ["24/7", "business office"],
 ];
 
@@ -49,32 +49,123 @@ export const services = [
 
 export const projects = [
   {
-    year: "Demo 01",
-    name: "Tony AutoCare Garage",
-    type: "Service Business",
-    tags: ["GitHub Pages", "WhatsApp Quote", "Gallery"],
-    copy: "A garage website concept that turns technical automotive services into clear customer requests.",
+    year: "01",
+    name: "WhatsApp Product Catalogue",
+    type: "Catalogue",
+    tags: ["Filters", "Product Codes", "Order Message"],
+    copy: "Filtering, product selection and pre-filled WhatsApp order messages for small sellers.",
   },
   {
-    year: "Demo 02",
-    name: "RK Fashion Catalogue",
-    type: "Product Catalogue",
-    tags: ["Search", "Product Codes", "WhatsApp Orders"],
-    copy: "A low-cost commerce flow for sellers who need organised product browsing without a full store backend.",
+    year: "02",
+    name: "ACK St. Paul's Karen West Concept",
+    type: "Church Site",
+    tags: ["Services", "Ministries", "Events"],
+    copy: "A structured church concept for ministries, services, media and clear contact interactions.",
   },
   {
-    year: "Demo 03",
-    name: "Creative Professional Portfolio",
-    type: "Portfolio System",
-    tags: ["Packages", "Bookings", "Testimonials"],
-    copy: "A personal brand site for freelancers and creatives who need proof, packages and enquiry capture.",
+    year: "03",
+    name: "Portfolio Generator",
+    type: "Reusable System",
+    tags: ["Themes", "Profiles", "GitHub Pages"],
+    copy: "Reusable portfolio sections and deployment patterns for job seekers and freelancers.",
+  },
+  {
+    year: "04",
+    name: "AI Document Studio",
+    type: "Documents",
+    tags: ["PDF", "Forms", "Branding"],
+    copy: "Branded letters, forms, certificates and PDF-generation workflows for organisations.",
+  },
+  {
+    year: "05",
+    name: "Cybersecurity Learning Lab",
+    type: "Learning",
+    tags: ["Notes", "Labs", "Network Basics"],
+    copy: "A safe public learning record for cybersecurity progress, tool notes and lab modules.",
+  },
+  {
+    year: "06",
+    name: "3D Farm Marketplace",
+    type: "3D Commerce",
+    tags: ["Three.js", "Products", "WhatsApp"],
+    copy: "Lightweight 3D product views paired with simple WhatsApp ordering.",
+  },
+  {
+    year: "07",
+    name: "Audio / Technical Services Concept",
+    type: "Booking Site",
+    tags: ["Packages", "Booking", "Support"],
+    copy: "Service packages, booking prompts and technical support information in one link.",
   },
 ];
 
 export const process = [
-  "Scope the right static website package",
-  "Collect content, images and deposit before build",
-  "Design with reusable templates and strong mobile polish",
-  "Preview, revise twice, test links and launch",
-  "Offer care plans for updates, backups and domain reminders",
+  "Contact through WhatsApp, email or referral",
+  "Discover the audience, content, budget and problem",
+  "Scope pages, features, timeline and launch price",
+  "Design the structure, direction and responsive layout",
+  "Build pages, interactions and enquiry pathways",
+  "Review with focused revisions and clear approvals",
+  "Launch, connect domain and test every link",
+  "Support with handover, updates and care plans",
+];
+
+export const journey = [
+  {
+    year: "01",
+    title: "Automotive Engineering",
+    meta: "Foundation",
+    body: "I trained in automotive engineering and built a practical understanding of systems, diagnostics and problem solving. That engineering mindset still shapes how I approach technical work.",
+  },
+  {
+    year: "02",
+    title: "Discovering IT",
+    meta: "Self-study",
+    body: "My interest in computers grew through self-directed learning: websites, operating systems, networks and the digital tools behind everyday business.",
+  },
+  {
+    year: "03",
+    title: "First Website",
+    meta: "Proof",
+    body: "Creating my first website showed me I could turn ideas into working digital experiences, not just study the tools from a distance.",
+  },
+  {
+    year: "04",
+    title: "Practical Digital Skills",
+    meta: "Toolbox",
+    body: "I kept building skills across web development, GitHub hosting, design, AI-assisted workflows, document production and troubleshooting.",
+  },
+  {
+    year: "05",
+    title: "Freelance Work",
+    meta: "Delivery",
+    body: "I began helping people and organisations shape websites, portfolios, branded documents and useful digital materials.",
+  },
+  {
+    year: "06",
+    title: "Referrals and Trust",
+    meta: "Growth",
+    body: "Good work started creating recommendations. Referrals became a practical source of new opportunities and credibility.",
+  },
+  {
+    year: "07",
+    title: "Cybersecurity Direction",
+    meta: "Next layer",
+    body: "I am pursuing cybersecurity to strengthen my security knowledge and build safer websites, systems and digital solutions.",
+  },
+  {
+    year: "08",
+    title: "Current Mission",
+    meta: "Now",
+    body: "I combine engineering thinking, technology learning, web development, AI tools and growing cybersecurity knowledge to build useful digital solutions.",
+  },
+];
+
+export const capabilities = [
+  "Web development",
+  "GitHub deployment",
+  "AI-assisted workflows",
+  "Cybersecurity learning",
+  "Document production",
+  "Technical troubleshooting",
 ];
