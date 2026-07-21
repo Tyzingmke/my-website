@@ -2,6 +2,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/prepare-static-output.mjs",
     "start": "next start"
   },
   "dependencies": {
