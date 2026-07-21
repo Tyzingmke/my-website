@@ -31,7 +31,9 @@ jobs:
         run: npm ci
 
       - name: Build static site
-        run: npm run build
+        env:
+          GITHUB_PAGES: "true"
+        run: npm run build:next
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

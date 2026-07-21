@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
+  output: process.env.GITHUB_PAGES === "true" ? "export" : undefined,
   devIndicators: false,
   images: {
     unoptimized: true
