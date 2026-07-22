@@ -8,6 +8,7 @@ import { Header } from "@/components/Header";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ScrollExperience } from "@/components/ScrollExperience";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "swap" });
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="skip-link" href="#main-content">Skip to content</a>
         <PageTransition />
         <MotionProvider />
+        <ScrollExperience />
         <Header />
         <main id="main-content">{children}</main>
         <Footer />

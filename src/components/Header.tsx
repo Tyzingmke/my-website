@@ -20,6 +20,7 @@ export function Header() {
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
   const closeTimer = useRef<number | null>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
   const home = pathname === "/";
 
   const closeMenu = useCallback((animate = false) => {
@@ -62,6 +63,41 @@ export function Header() {
     return () => window.removeEventListener("scroll", closeOnScroll);
   }, [closeMenu, open]);
 
+  useEffect(() => {
+    closeMenu(false);
+  }, [closeMenu, pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!topbarRef.current?.contains(event.target as Node)) closeMenu(true);
+    };
+    const closeWithKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMenu(true);
+    };
+    const closeOnResize = () => {
+      if (window.innerWidth > 900) closeMenu(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeWithKeyboard);
+    window.addEventListener("resize", closeOnResize, { passive: true });
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeWithKeyboard);
+      window.removeEventListener("resize", closeOnResize);
+    };
+  }, [closeMenu, open]);
+
+  useEffect(() => {
+    const resetMenu = () => closeMenu(false);
+    window.addEventListener("pagehide", resetMenu);
+    window.addEventListener("pageshow", resetMenu);
+    return () => {
+      window.removeEventListener("pagehide", resetMenu);
+      window.removeEventListener("pageshow", resetMenu);
+    };
+  }, [closeMenu]);
+
   const toggleMenu = () => {
     if (open) {
       closeMenu(true);
@@ -74,7 +110,7 @@ export function Header() {
 
   return (
     <header className={home ? "site-header site-header-home" : "site-header"} data-site-header data-home-header={home ? "" : undefined}>
-      <div className="topbar-shell" data-header-top>
+      <div className="topbar-shell" data-header-top ref={topbarRef}>
         <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => closeMenu()}>
           <strong>ANTONY</strong><span>MBURU</span>
         </Link>
