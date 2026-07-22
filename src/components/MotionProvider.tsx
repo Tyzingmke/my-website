@@ -24,22 +24,44 @@ export function MotionProvider() {
     const returningHome = pathname === "/" && introPlayed.current && previousPath.current !== "/";
     const playHomeIntro = pathname === "/" && (!introPlayed.current || previousPath.current !== "/");
     const returnGreetings = [
-      "Hope you still remember me. I'm ",
-      "Back already? Good choice. I'm ",
-      "You found the way home. I'm ",
-      "Still here, still building. I'm ",
+      {
+        opening: "You're back.",
+        followUp: "Well, I'm still Tony, your dev.",
+      },
+      {
+        opening: "Ah, nice. You've come back.",
+        followUp: "I hope you were pleased. I'm still Tony.",
+      },
+      {
+        opening: "Back for another look?",
+        followUp: "Good. Tony's still here, building.",
+      },
+      {
+        opening: "You know your way around now.",
+        followUp: "I'm still Tony. Let's make something useful.",
+      },
     ];
+    const returnGreeting = returnGreetings[returnVisit.current % returnGreetings.length];
     root.dataset.homeIntro = playHomeIntro ? "playing" : "ready";
 
     let lenis: Lenis | null = null;
     let tick: ((time: number) => void) | null = null;
     let markRouteTimer = 0;
+    let introUnlockTimer = 0;
     let removeHeroPointer: (() => void) | null = null;
     const previousBodyOverflow = playHomeIntro ? "" : document.body.style.overflow;
+    const completeHomeIntro = () => {
+      if (root.dataset.homeIntro === "ready") return;
+      document.body.style.overflow = previousBodyOverflow;
+      root.dataset.homeIntro = "ready";
+      lenis?.start();
+      window.dispatchEvent(new Event("home-intro-complete"));
+    };
 
     if (playHomeIntro) {
       window.scrollTo(0, 0);
       document.body.style.overflow = "hidden";
+      introUnlockTimer = window.setTimeout(completeHomeIntro, 9000);
     }
     markRouteTimer = window.setTimeout(() => {
       if (playHomeIntro) {
@@ -69,14 +91,16 @@ export function MotionProvider() {
       const intro = document.querySelector<HTMLElement>("[data-intro-greeting]");
       const introPrimary = document.querySelector<HTMLElement>("[data-intro-primary]");
       const introLead = document.querySelector<HTMLElement>("[data-intro-lead]");
+      const introTony = introPrimary?.querySelector<HTMLElement>("strong") ?? null;
       const introAlias = document.querySelector<HTMLElement>("[data-intro-alias]");
       const introAntony = document.querySelector<HTMLElement>("[data-intro-antony]");
       const heroName = document.querySelector<HTMLElement>("[data-hero-name]");
 
-      if (introPrimary && introLead) {
-        introLead.textContent = returningHome
-          ? returnGreetings[returnVisit.current % returnGreetings.length]
-          : "Hi, I'm ";
+      if (intro && introPrimary && introLead && introTony && introAlias) {
+        introLead.textContent = returningHome ? returnGreeting.opening : "Hi, I'm ";
+        introTony.textContent = returningHome ? "" : "TONY.";
+        introAlias.textContent = returningHome ? returnGreeting.followUp : "or else you can call me";
+        intro.toggleAttribute("data-returning", returningHome);
         introPrimary.toggleAttribute("data-returning", returningHome);
       }
 
@@ -116,10 +140,8 @@ export function MotionProvider() {
           .fromTo("[data-hero-card]", { autoAlpha: 0, y: 18, rotate: -2 }, { autoAlpha: 1, y: 0, rotate: 0, duration: 0.58, stagger: 0.09 }, 6.24)
           .fromTo(".site-header", { autoAlpha: 0, y: -14 }, { autoAlpha: 1, y: 0, duration: 0.62 }, 5.92)
           .eventCallback("onComplete", () => {
-            document.body.style.overflow = previousBodyOverflow;
-            root.dataset.homeIntro = "ready";
-            lenis?.start();
-            window.dispatchEvent(new Event("home-intro-complete"));
+            window.clearTimeout(introUnlockTimer);
+            completeHomeIntro();
           });
 
         if (richMotion) {
@@ -141,7 +163,8 @@ export function MotionProvider() {
         gsap.set("[data-intro-greeting]", { display: "none" });
         gsap.set("[data-hero-image='soft']", { display: "none" });
         gsap.set("[data-hero-image='sharp'], [data-hero-content], [data-hero-card], .site-header", { autoAlpha: 1 });
-        root.dataset.homeIntro = "ready";
+        window.clearTimeout(introUnlockTimer);
+        completeHomeIntro();
       }
 
       if (hero && richMotion) {
@@ -520,6 +543,7 @@ export function MotionProvider() {
       context.revert();
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       window.clearTimeout(markRouteTimer);
+      window.clearTimeout(introUnlockTimer);
       removeHeroPointer?.();
       if (root.dataset.pageTransition !== "active") document.body.style.overflow = previousBodyOverflow;
       if (tick) gsap.ticker.remove(tick);

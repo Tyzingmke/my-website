@@ -683,11 +683,11 @@ html[data-home-intro="ready"] .intro-greeting {
 
 .hero-map-background {
   position: absolute;
-  top: 5%;
+  top: 2%;
   left: 50%;
   z-index: -2;
-  width: min(118vw, 122rem);
-  height: 90%;
+  width: min(132vw, 136rem);
+  height: 96%;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -701,7 +701,7 @@ html[data-home-intro="ready"] .intro-greeting {
 }
 
 .hero-map-background img {
-  opacity: 0.035;
+  opacity: 0.025;
   object-fit: fill;
   mix-blend-mode: multiply;
 }
@@ -712,8 +712,8 @@ html[data-home-intro="ready"] .intro-greeting {
 
 .hero-map-background path {
   fill: none;
-  stroke: rgba(38, 94, 145, 0.34);
-  stroke-width: 4;
+  stroke: rgba(38, 94, 145, 0.3);
+  stroke-width: 3.25;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1;
@@ -756,7 +756,11 @@ html[data-home-intro="ready"] .intro-greeting {
 }
 
 .intro-primary[data-returning] {
-  font-size: clamp(1.45rem, 3.2vw, 3.2rem);
+  width: min(92vw, 72rem);
+  font-size: clamp(1.8rem, 4.6vw, 4.6rem);
+  line-height: 1.04;
+  text-align: center;
+  white-space: normal;
 }
 
 .intro-primary strong,
@@ -774,6 +778,16 @@ html[data-home-intro="ready"] .intro-greeting {
   font-weight: 700;
   text-transform: uppercase;
   opacity: 0;
+}
+
+.intro-greeting[data-returning] .intro-alias {
+  width: min(88vw, 58rem);
+  margin-top: 0;
+  font-size: clamp(1.25rem, 2.8vw, 2.7rem);
+  line-height: 1.12;
+  text-align: center;
+  text-transform: none;
+  white-space: normal;
 }
 
 .intro-antony {
@@ -2893,9 +2907,9 @@ html:not([data-motion]) [data-hero-name] {
   }
 
   .hero-map-background {
-    top: 10%;
-    width: 168vw;
-    height: 74%;
+    top: 7%;
+    width: 184vw;
+    height: 79%;
   }
 
   .hero-map-background path {
