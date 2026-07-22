@@ -95,7 +95,11 @@ export function MotionProvider() {
       const introAlias = document.querySelector<HTMLElement>("[data-intro-alias]");
       const introAntony = document.querySelector<HTMLElement>("[data-intro-antony]");
       const heroName = document.querySelector<HTMLElement>("[data-hero-name]");
-      const introTiles = Array.from(document.querySelectorAll<HTMLElement>("[data-intro-tile]"));
+      const introTiles = Array.from(document.querySelectorAll<HTMLElement>("[data-intro-tile]"))
+        .filter((tile) => getComputedStyle(tile).display !== "none");
+      const introColumns = window.innerWidth <= 640 ? 4 : window.innerWidth <= 900 ? 6 : 7;
+      const introGrid: [number, number] = [Math.ceil(introTiles.length / introColumns), introColumns];
+      const introTileColors = ["#e8ff1e", "#11130f", "#f3f4ed"];
       let introTokens: HTMLElement[] = [];
 
       if (intro && introPrimary && introLead && introTony && introAlias) {
@@ -129,7 +133,14 @@ export function MotionProvider() {
         gsap.set("[data-hero-image='soft']", { autoAlpha: 0.72, scale: 0.91, yPercent: 8 });
         gsap.set([introAlias, introAntony], { autoAlpha: 0 });
         gsap.set([...introTokens, introTony], { autoAlpha: 0 });
-        gsap.set(introTiles, { autoAlpha: 0, scale: 0.46, rotation: 0 });
+        gsap.set(introTiles, {
+          autoAlpha: 0,
+          scale: 0.46,
+          rotation: 0,
+          rotationY: 0,
+          transformPerspective: 900,
+          backgroundColor: (index) => introTileColors[index % introTileColors.length],
+        });
 
         const tokenPatterns = [
           [{ x: 0, y: 28, rotation: 0 }, { x: 0, y: -18, rotation: 0 }, { x: 0, y: 24, rotation: 0 }],
@@ -144,8 +155,8 @@ export function MotionProvider() {
           .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.32 })
           .fromTo(
             introTiles,
-            { autoAlpha: 0, scale: 0.42, rotation: (index) => index % 2 ? -5 : 5 },
-            { autoAlpha: 0.42, scale: 1, rotation: 0, duration: 0.58, stagger: { each: 0.018, grid: [6, 7], from: "center" } },
+            { autoAlpha: 0, scale: 0.42, rotation: (index) => index % 2 ? -5 : 5, rotationY: (index) => index % 2 ? -92 : 92 },
+            { autoAlpha: 0.42, scale: 1, rotation: 0, rotationY: 0, duration: 0.58, stagger: { each: 0.018, grid: introGrid, from: "center" } },
             0,
           )
           .fromTo(
@@ -160,14 +171,34 @@ export function MotionProvider() {
             { autoAlpha: 1, x: 0, y: 0, rotation: 0, filter: "blur(0px)", duration: 0.48, stagger: 0.11 },
             0.1,
           )
-          .to(introTiles, { autoAlpha: 0.08, scale: 1.08, duration: 0.48, stagger: { each: 0.01, grid: [6, 7], from: "edges" } }, 1.42)
+          .to(introTiles, {
+            autoAlpha: 0.18,
+            scale: 1.06,
+            rotationY: (index) => index % 2 ? 180 : -180,
+            backgroundColor: (index) => introTileColors[(index + 1) % introTileColors.length],
+            duration: 0.54,
+            stagger: { each: 0.01, grid: introGrid, from: "edges" },
+          }, 1.38)
           .fromTo(
             introTiles,
-            { autoAlpha: 0.06, scale: 0.82, xPercent: -18 },
-            { autoAlpha: 0.28, scale: 1, xPercent: 0, duration: 0.52, stagger: { each: 0.014, grid: [6, 7], from: "start" } },
+            {
+              autoAlpha: 0.06,
+              scale: 0.82,
+              xPercent: -18,
+              rotationY: (index) => index % 2 ? -90 : 90,
+              backgroundColor: (index) => introTileColors[(index + 2) % introTileColors.length],
+            },
+            { autoAlpha: 0.3, scale: 1, xPercent: 0, rotationY: 0, duration: 0.52, stagger: { each: 0.014, grid: introGrid, from: "start" } },
             2.28,
           )
-          .to(introTiles, { autoAlpha: 0.04, xPercent: 14, duration: 0.7, stagger: { each: 0.012, grid: [6, 7], from: "end" } }, 3.72)
+          .to(introTiles, {
+            autoAlpha: 0.06,
+            xPercent: 14,
+            rotationY: (index) => index % 2 ? 180 : -180,
+            backgroundColor: (index) => introTileColors[index % introTileColors.length],
+            duration: 0.7,
+            stagger: { each: 0.012, grid: introGrid, from: "end" },
+          }, 3.72)
           .fromTo(introTony, { autoAlpha: 0, scale: 0.94, filter: "blur(9px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.52 }, tonyRevealAt)
           .to(introPrimary, { autoAlpha: 0, y: -24, scale: 0.96, duration: 0.38 }, 2.38)
           .fromTo(introAlias, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 2.52)
@@ -179,7 +210,7 @@ export function MotionProvider() {
             4.78,
           )
           .to(intro, { backgroundColor: "rgba(215, 214, 207, 0)", backdropFilter: "blur(0px)", duration: 1.1 }, 4.72)
-          .to(introTiles, { autoAlpha: 0, scale: 1.2, duration: 0.62, stagger: { each: 0.008, grid: [6, 7], from: "center" } }, 4.76)
+          .to(introTiles, { autoAlpha: 0, scale: 1.2, duration: 0.62, stagger: { each: 0.008, grid: introGrid, from: "center" } }, 4.76)
           .to(introAntony, { x: shiftX, y: shiftY, scale, duration: 1.14, ease: "power4.inOut" }, 5.34)
           .to(introAntony, { autoAlpha: 0, duration: 0.14 }, 6.38)
           .set(heroName, { autoAlpha: 1 }, 6.42)
@@ -847,21 +878,165 @@ export function MotionProvider() {
       media.add("(min-width: 961px) and (prefers-reduced-motion: no-preference)", () => {
         const track = document.querySelector<HTMLElement>("[data-project-track]");
         const section = document.querySelector<HTMLElement>("[data-project-rail]");
-        if (!track || !section) return;
+        const pin = document.querySelector<HTMLElement>("[data-project-pin]");
+        if (!track || !section || !pin) return;
         const distance = () => Math.max(track.scrollWidth - innerWidth + innerWidth * 0.08, 0);
-        gsap.to(track, {
+        const tween = gsap.to(track, {
           x: () => -distance(),
           ease: "none",
           scrollTrigger: {
             trigger: section,
             start: "top top",
             end: () => `+=${distance()}`,
-            pin: "[data-project-pin]",
-            scrub: true,
+            pin,
+            scrub: 0.55,
             invalidateOnRefresh: true,
             anticipatePin: 1,
           },
         });
+        return () => tween.kill();
+      });
+
+      media.add("(max-width: 960px) and (prefers-reduced-motion: no-preference)", () => {
+        const track = document.querySelector<HTMLElement>("[data-project-track]");
+        const section = document.querySelector<HTMLElement>("[data-project-rail]");
+        const pin = document.querySelector<HTMLElement>("[data-project-pin]");
+        if (!track || !section || !pin) return;
+        const distance = () => Math.max(track.scrollWidth - innerWidth + 92, 0);
+        const tween = gsap.to(track, {
+          x: () => -distance(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: () => `+=${distance()}`,
+            pin,
+            scrub: 0.42,
+            invalidateOnRefresh: true,
+            anticipatePin: 1,
+          },
+        });
+        return () => tween.kill();
+      });
+
+      const promiseSection = document.querySelector<HTMLElement>("[data-promise-reveal]");
+      const promisePixels = Array.from(document.querySelectorAll<HTMLElement>("[data-promise-pixel]"));
+      const promiseImage = promiseSection?.querySelector<HTMLElement>("[data-promise-identity] img") ?? null;
+      const promiseName = promiseSection?.querySelector<HTMLElement>("[data-promise-name]") ?? null;
+
+      media.add("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+        if (!promiseSection || !promisePixels.length || !promiseImage || !promiseName) return;
+        const timers = new Map<HTMLElement, number>();
+        const imageX = gsap.quickTo(promiseImage, "x", { duration: 0.62, ease: "power3.out" });
+        const imageY = gsap.quickTo(promiseImage, "y", { duration: 0.62, ease: "power3.out" });
+        const nameX = gsap.quickTo(promiseName, "x", { duration: 0.7, ease: "power3.out" });
+        let latestEvent: PointerEvent | null = null;
+        let frame = 0;
+
+        const revealPixels = () => {
+          frame = 0;
+          if (!latestEvent) return;
+          const rect = promiseSection.getBoundingClientRect();
+          const localX = latestEvent.clientX - rect.left;
+          const localY = latestEvent.clientY - rect.top;
+          const columns = 14;
+          const rows = 8;
+          const cellWidth = rect.width / columns;
+          const cellHeight = rect.height / rows;
+          const radius = Math.max(150, Math.min(rect.width, rect.height) * 0.29);
+
+          promisePixels.forEach((pixel, index) => {
+            const column = index % columns;
+            const row = Math.floor(index / columns);
+            const dx = column * cellWidth + cellWidth / 2 - localX;
+            const dy = row * cellHeight + cellHeight / 2 - localY;
+            const distance = Math.hypot(dx, dy);
+            if (distance > radius) return;
+            const existingTimer = timers.get(pixel);
+            if (existingTimer) window.clearTimeout(existingTimer);
+            pixel.style.transitionDuration = "95ms";
+            pixel.style.opacity = "0";
+            const timer = window.setTimeout(() => {
+              pixel.style.transitionDuration = "560ms";
+              pixel.style.opacity = "1";
+              timers.delete(pixel);
+            }, 260 + (distance / radius) * 240);
+            timers.set(pixel, timer);
+          });
+
+          const normalizedX = localX / Math.max(rect.width, 1) - 0.5;
+          const normalizedY = localY / Math.max(rect.height, 1) - 0.5;
+          imageX(normalizedX * 34);
+          imageY(normalizedY * 22);
+          nameX(normalizedX * -22);
+        };
+
+        const onPointerMove = (event: PointerEvent) => {
+          latestEvent = event;
+          if (!frame) frame = requestAnimationFrame(revealPixels);
+        };
+        const onPointerLeave = () => {
+          latestEvent = null;
+          if (frame) cancelAnimationFrame(frame);
+          frame = 0;
+          promisePixels.forEach((pixel) => {
+            const timer = timers.get(pixel);
+            if (timer) window.clearTimeout(timer);
+            pixel.style.transitionDuration = "480ms";
+            pixel.style.opacity = "1";
+          });
+          timers.clear();
+          imageX(0);
+          imageY(0);
+          nameX(0);
+        };
+
+        promiseSection.addEventListener("pointermove", onPointerMove);
+        promiseSection.addEventListener("pointerleave", onPointerLeave);
+        return () => {
+          promiseSection.removeEventListener("pointermove", onPointerMove);
+          promiseSection.removeEventListener("pointerleave", onPointerLeave);
+          onPointerLeave();
+        };
+      });
+
+      media.add("(hover: none) and (prefers-reduced-motion: no-preference)", () => {
+        if (!promiseSection || !promisePixels.length || !promiseImage) return;
+        const columns = window.innerWidth <= 640 ? 7 : 8;
+        const targets = promisePixels.filter((_, index) => (index + Math.floor(index / columns)) % 3 !== 0);
+        const pixelTween = gsap.fromTo(
+          targets,
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0.06,
+            ease: "none",
+            stagger: { each: 0.008, grid: [Math.ceil(promisePixels.length / columns), columns], from: "center" },
+            scrollTrigger: {
+              trigger: promiseSection,
+              start: "top 84%",
+              end: "center 46%",
+              scrub: 0.55,
+            },
+          },
+        );
+        const imageTween = gsap.fromTo(
+          promiseImage,
+          { yPercent: 5 },
+          {
+            yPercent: -4,
+            ease: "none",
+            scrollTrigger: {
+              trigger: promiseSection,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.65,
+            },
+          },
+        );
+        return () => {
+          pixelTween.kill();
+          imageTween.kill();
+        };
       });
     }, document.body);
 

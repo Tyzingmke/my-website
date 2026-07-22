@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BriefcaseBusiness, CalendarDays, Handshake, House, Layers3, Mail, Menu, UserRound, X } from "lucide-react";
 import { nav, profile } from "@/data/site";
 
@@ -17,36 +17,81 @@ const dockIcons = {
 export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const closeTimer = useRef<number | null>(null);
   const home = pathname === "/";
+
+  const closeMenu = useCallback((animate = false) => {
+    if (animate && closingRef.current) return;
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    if (!animate) {
+      closingRef.current = false;
+      setClosing(false);
+      setOpen(false);
+      return;
+    }
+    closingRef.current = true;
+    setClosing(true);
+    closeTimer.current = window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+      closingRef.current = false;
+      closeTimer.current = null;
+    }, 230);
+  }, []);
 
   useEffect(() => {
     const closeWhenDocked = (event: Event) => {
-      if ((event as CustomEvent<{ docked: boolean }>).detail.docked) setOpen(false);
+      if ((event as CustomEvent<{ docked: boolean }>).detail.docked) closeMenu(true);
     };
     window.addEventListener("header-dock-change", closeWhenDocked);
-    return () => window.removeEventListener("header-dock-change", closeWhenDocked);
-  }, []);
+    return () => {
+      window.removeEventListener("header-dock-change", closeWhenDocked);
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, [closeMenu]);
+
+  useEffect(() => {
+    if (!open) return;
+    const startY = window.scrollY;
+    const closeOnScroll = () => {
+      if (Math.abs(window.scrollY - startY) > 8) closeMenu(true);
+    };
+    window.addEventListener("scroll", closeOnScroll, { passive: true });
+    return () => window.removeEventListener("scroll", closeOnScroll);
+  }, [closeMenu, open]);
+
+  const toggleMenu = () => {
+    if (open) {
+      closeMenu(true);
+      return;
+    }
+    closingRef.current = false;
+    setClosing(false);
+    setOpen(true);
+  };
 
   return (
     <header className={home ? "site-header site-header-home" : "site-header"} data-site-header data-home-header={home ? "" : undefined}>
       <div className="topbar-shell" data-header-top>
-        <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => setOpen(false)}>
+        <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => closeMenu()}>
           <strong>ANTONY</strong><span>MBURU</span>
         </Link>
 
-        <button className="menu-toggle" data-menu-toggle type="button" aria-expanded={open} aria-controls="site-menu" onClick={() => setOpen((value) => !value)}>
+        <button className="menu-toggle" data-menu-toggle type="button" aria-expanded={open} aria-controls="site-menu" onClick={toggleMenu}>
           {open ? <X size={20} /> : <Menu size={20} />}
           <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
         </button>
 
-        <nav className={open ? "header-nav is-open" : "header-nav"} id="site-menu" aria-label="Primary navigation">
+        <nav className={open ? `header-nav is-open${closing ? " is-closing" : ""}` : "header-nav"} id="site-menu" aria-label="Primary navigation">
           {nav.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
-            return <Link className={active ? "is-active" : ""} data-header-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>{item.label}</Link>;
+            return <Link className={active ? "is-active" : ""} data-header-transfer={item.href} href={item.href} key={item.href} onClick={() => closeMenu()}>{item.label}</Link>;
           })}
         </nav>
 
-        <Link className="header-contact" href="/contact/" onClick={() => setOpen(false)}>
+        <Link className="header-contact" href="/contact/" onClick={() => closeMenu()}>
           Let&apos;s talk <ArrowUpRight size={16} />
         </Link>
       </div>
@@ -61,7 +106,7 @@ export function Header() {
               const Icon = dockIcons[item.href as keyof typeof dockIcons];
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
               return (
-                <Link className={active ? "is-active" : ""} data-dock-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>
+                <Link className={active ? "is-active" : ""} data-dock-transfer={item.href} href={item.href} key={item.href} onClick={() => closeMenu()}>
                   {Icon ? <Icon size={16} /> : null}
                   <span className="dock-label-full">{item.label}</span>
                   <span className="dock-label-short">{item.shortLabel}</span>

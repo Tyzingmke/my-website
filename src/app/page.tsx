@@ -168,7 +168,17 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-promise section-band section-cobalt">
+      <section className="home-promise section-band section-cobalt" data-promise-reveal>
+        <div className="promise-pixel-scene" aria-hidden="true">
+          <div className="promise-pixel-identity" data-promise-identity>
+            <strong data-promise-name>ANTONY</strong>
+            <span>MBURU / DIGITAL SYSTEMS</span>
+            <Image src={assetPath("/images/antony-logo-shirt.webp")} alt="" width={941} height={1672} sizes="(max-width: 900px) 70vw, 42vw" />
+          </div>
+          <div className="promise-pixel-cover">
+            {Array.from({ length: 112 }, (_, index) => <i data-promise-pixel key={index} />)}
+          </div>
+        </div>
         <div className="section-shell promise-grid">
           <p className="eyebrow">The working standard</p>
           <h2 data-reveal>Fast enough to feel effortless.<br />Clear enough to be useful.</h2>
