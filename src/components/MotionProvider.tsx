@@ -19,10 +19,23 @@ export function MotionProvider() {
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const desktop = matchMedia("(min-width: 961px) and (pointer: fine)").matches;
+    const mobileMotion = matchMedia("(max-width: 900px)").matches;
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
-    const richMotion = !reduced && desktop && memory >= 4;
+    const cores = navigator.hardwareConcurrency ?? 4;
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    const liteMotion = !reduced && (
+      memory <= 2
+      || cores <= 2
+      || connection?.saveData === true
+      || connection?.effectiveType === "2g"
+      || connection?.effectiveType === "slow-2g"
+    );
+    const lightweightMotion = mobileMotion || liteMotion;
+    const richMotion = !reduced && !liteMotion && desktop && memory >= 4;
     const root = document.documentElement;
-    root.dataset.motion = reduced ? "reduced" : richMotion ? "rich" : "standard";
+    root.dataset.motion = reduced ? "reduced" : liteMotion ? "lite" : richMotion ? "rich" : "standard";
     const initialRun = initialEffect.current;
     initialEffect.current = false;
     const reloadScrollY = initialRun && isReloadNavigation() ? Math.max(readStoredScroll(pathname), window.scrollY) : 0;
@@ -109,6 +122,7 @@ export function MotionProvider() {
 
     const context = gsap.context(() => {
       const hero = document.querySelector<HTMLElement>("[data-home-hero]");
+      const heroMapPath = hero?.querySelector<SVGPathElement>(".hero-map-background path") ?? null;
       const intro = document.querySelector<HTMLElement>("[data-intro-greeting]");
       const introPrimary = document.querySelector<HTMLElement>("[data-intro-primary]");
       const introLead = document.querySelector<HTMLElement>("[data-intro-lead]");
@@ -117,6 +131,29 @@ export function MotionProvider() {
       const introAntony = document.querySelector<HTMLElement>("[data-intro-antony]");
       const heroName = document.querySelector<HTMLElement>("[data-hero-name]");
       let introTokens: HTMLElement[] = [];
+
+      if (heroMapPath) {
+        const mapLength = heroMapPath.getTotalLength();
+        if (reduced || liteMotion) {
+          gsap.set(heroMapPath, {
+            strokeDasharray: `${mapLength} ${mapLength}`,
+            strokeDashoffset: mapLength,
+            opacity: 0.12,
+          });
+          gsap.to(heroMapPath, { strokeDashoffset: 0, opacity: 0.42, duration: 4.2, ease: "none" });
+        } else {
+          gsap.set(heroMapPath, {
+            strokeDasharray: `${mapLength} ${mapLength}`,
+            strokeDashoffset: mapLength,
+            opacity: 0.08,
+          });
+          gsap.timeline({ repeat: -1, repeatDelay: 0.7 })
+            .to(heroMapPath, { strokeDashoffset: 0, opacity: 0.62, duration: lightweightMotion ? 6.4 : 8.4, ease: "power1.inOut" })
+            .to(heroMapPath, { opacity: 0.28, duration: 1.25, ease: "sine.inOut" })
+            .to(heroMapPath, { opacity: 0.08, duration: 0.85, ease: "sine.in" })
+            .set(heroMapPath, { strokeDashoffset: mapLength });
+        }
+      }
 
       if (intro && introPrimary && introLead && introTony && introAlias) {
         const tokenLabels = returningHome ? returnGreeting.opening.split(/\s+/) : ["Hi", ",", "I'm"];
@@ -145,8 +182,13 @@ export function MotionProvider() {
 
         gsap.set(heroName, { autoAlpha: 0 });
         gsap.set("[data-hero-content], [data-hero-card], [data-hero-image='sharp']", { autoAlpha: 0 });
-        gsap.set("[data-hero-image='sharp']", { scale: 0.95, yPercent: 6 });
-        gsap.set("[data-hero-image='soft']", { autoAlpha: 0.72, scale: 0.91, yPercent: 8 });
+        gsap.set("[data-hero-image='sharp']", { scale: lightweightMotion ? 0.97 : 0.95, yPercent: lightweightMotion ? 3 : 6 });
+        if (lightweightMotion) {
+          gsap.set("[data-hero-image='soft']", { display: "none" });
+          gsap.set(intro, { backdropFilter: "none" });
+        } else {
+          gsap.set("[data-hero-image='soft']", { autoAlpha: 0.72, scale: 0.91, yPercent: 8 });
+        }
         gsap.set([introAlias, introAntony], { autoAlpha: 0 });
         gsap.set([...introTokens, introTony], { autoAlpha: 0 });
 
@@ -158,9 +200,12 @@ export function MotionProvider() {
         const tokenPattern = tokenPatterns[(returningHome ? returnVisit.current + 1 : 0) % tokenPatterns.length];
         const tonyRevealAt = Math.min(0.9, 0.34 + introTokens.length * 0.11);
 
+        const timings = lightweightMotion
+          ? { primaryOut: 1.55, aliasIn: 1.66, aliasOut: 2.72, antonyIn: 2.64, curtain: 2.6, nameMove: 3.12, nameHide: 3.78, nameSwap: 3.82, introHide: 3.92, image: 2.68, content: 3.5, cards: 3.56, header: 3.36 }
+          : { primaryOut: 2.38, aliasIn: 2.52, aliasOut: 4.86, antonyIn: 4.78, curtain: 4.72, nameMove: 5.34, nameHide: 6.38, nameSwap: 6.42, introHide: 6.52, image: 4.82, content: 6.16, cards: 6.24, header: 5.92 };
         const introTimeline = gsap.timeline({ defaults: { ease: "power3.out" } });
         introTimeline
-          .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.32 })
+          .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: lightweightMotion ? 0.2 : 0.32 })
           .fromTo(
             introTokens,
             {
@@ -168,31 +213,31 @@ export function MotionProvider() {
               x: (index) => tokenPattern[index % tokenPattern.length].x,
               y: (index) => tokenPattern[index % tokenPattern.length].y,
               rotation: (index) => tokenPattern[index % tokenPattern.length].rotation,
-              filter: "blur(4px)",
+              filter: lightweightMotion ? "blur(0px)" : "blur(4px)",
             },
-            { autoAlpha: 1, x: 0, y: 0, rotation: 0, filter: "blur(0px)", duration: 0.48, stagger: 0.11 },
+            { autoAlpha: 1, x: 0, y: 0, rotation: 0, filter: "blur(0px)", duration: lightweightMotion ? 0.32 : 0.48, stagger: lightweightMotion ? 0.07 : 0.11 },
             0.1,
           )
-          .fromTo(introTony, { autoAlpha: 0, scale: 0.94, filter: "blur(9px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.52 }, tonyRevealAt)
-          .to(introPrimary, { autoAlpha: 0, y: -24, scale: 0.96, duration: 0.38 }, 2.38)
-          .fromTo(introAlias, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 2.52)
-          .to(introAlias, { autoAlpha: 0, x: -18, duration: 0.34 }, 4.86)
+          .fromTo(introTony, { autoAlpha: 0, scale: 0.94, filter: lightweightMotion ? "blur(0px)" : "blur(9px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: lightweightMotion ? 0.38 : 0.52 }, tonyRevealAt)
+          .to(introPrimary, { autoAlpha: 0, y: lightweightMotion ? -12 : -24, scale: 0.96, duration: lightweightMotion ? 0.26 : 0.38 }, timings.primaryOut)
+          .fromTo(introAlias, { autoAlpha: 0, y: lightweightMotion ? 8 : 16 }, { autoAlpha: 1, y: 0, duration: lightweightMotion ? 0.28 : 0.42 }, timings.aliasIn)
+          .to(introAlias, { autoAlpha: 0, x: lightweightMotion ? -8 : -18, duration: lightweightMotion ? 0.24 : 0.34 }, timings.aliasOut)
           .fromTo(
             introAntony,
-            { autoAlpha: 0, y: 18, scale: 0.9, filter: "blur(7px)" },
-            { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.54 },
-            4.78,
+            { autoAlpha: 0, y: lightweightMotion ? 8 : 18, scale: 0.9, filter: lightweightMotion ? "blur(0px)" : "blur(7px)" },
+            { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: lightweightMotion ? 0.34 : 0.54 },
+            timings.antonyIn,
           )
-          .to(intro, { backgroundColor: "rgba(215, 214, 207, 0)", backdropFilter: "blur(0px)", duration: 1.1 }, 4.72)
-          .to(introAntony, { x: shiftX, y: shiftY, scale, duration: 1.14, ease: "power4.inOut" }, 5.34)
-          .to(introAntony, { autoAlpha: 0, duration: 0.14 }, 6.38)
-          .set(heroName, { autoAlpha: 1 }, 6.42)
-          .set(intro, { autoAlpha: 0, visibility: "hidden" }, 6.52)
-          .to("[data-hero-image='soft']", { autoAlpha: 0, scale: 1, yPercent: 0, duration: 1.16 }, 4.82)
-          .to("[data-hero-image='sharp']", { autoAlpha: 1, scale: 1, yPercent: 0, duration: 1.16 }, 4.82)
-          .fromTo("[data-hero-content]", { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.62 }, 6.16)
-          .fromTo("[data-hero-card]", { autoAlpha: 0, y: 18, rotate: -2 }, { autoAlpha: 1, y: 0, rotate: 0, duration: 0.58, stagger: 0.09 }, 6.24)
-          .fromTo(".site-header", { autoAlpha: 0, y: -14 }, { autoAlpha: 1, y: 0, duration: 0.62 }, 5.92)
+          .to(intro, { backgroundColor: "rgba(215, 214, 207, 0)", backdropFilter: "blur(0px)", duration: lightweightMotion ? 0.72 : 1.1 }, timings.curtain)
+          .to(introAntony, { x: shiftX, y: shiftY, scale, duration: lightweightMotion ? 0.72 : 1.14, ease: "power4.inOut" }, timings.nameMove)
+          .to(introAntony, { autoAlpha: 0, duration: 0.12 }, timings.nameHide)
+          .set(heroName, { autoAlpha: 1 }, timings.nameSwap)
+          .set(intro, { autoAlpha: 0, visibility: "hidden" }, timings.introHide)
+          .to("[data-hero-image='soft']", { autoAlpha: 0, scale: 1, yPercent: 0, duration: lightweightMotion ? 0.01 : 1.16 }, timings.image)
+          .to("[data-hero-image='sharp']", { autoAlpha: 1, scale: 1, yPercent: 0, duration: lightweightMotion ? 0.72 : 1.16 }, timings.image)
+          .fromTo("[data-hero-content]", { autoAlpha: 0, y: lightweightMotion ? 12 : 22 }, { autoAlpha: 1, y: 0, duration: lightweightMotion ? 0.4 : 0.62 }, timings.content)
+          .fromTo("[data-hero-card]", { autoAlpha: 0, y: lightweightMotion ? 10 : 18, rotate: lightweightMotion ? 0 : -2 }, { autoAlpha: 1, y: 0, rotate: 0, duration: lightweightMotion ? 0.38 : 0.58, stagger: lightweightMotion ? 0.04 : 0.09 }, timings.cards)
+          .fromTo(".site-header", { autoAlpha: 0, y: lightweightMotion ? -8 : -14 }, { autoAlpha: 1, y: 0, duration: lightweightMotion ? 0.4 : 0.62 }, timings.header)
           .eventCallback("onComplete", () => {
             window.clearTimeout(introUnlockTimer);
             completeHomeIntro();
@@ -218,6 +263,25 @@ export function MotionProvider() {
             scrollTrigger: { trigger: hero, start: "top top", end: "bottom 42%", scrub: true },
           });
         }
+      } else if (hero && intro && introPrimary && introTony && introAlias && introAntony && playHomeIntro && reduced && window.scrollY < 80) {
+        gsap.set("[data-hero-image='soft']", { display: "none" });
+        gsap.set("[data-hero-image='sharp'], [data-hero-content], [data-hero-card], .site-header", { autoAlpha: 1 });
+        gsap.set(intro, { display: "grid", autoAlpha: 1 });
+        gsap.set([...introTokens, introTony, introPrimary], { autoAlpha: 1 });
+        gsap.set([introAlias, introAntony], { autoAlpha: 0 });
+        gsap.timeline({
+          defaults: { ease: "none" },
+          onComplete: () => {
+            gsap.set(intro, { display: "none" });
+            window.clearTimeout(introUnlockTimer);
+            completeHomeIntro();
+          },
+        })
+          .to(introPrimary, { autoAlpha: 0, duration: 0.2 }, 1.2)
+          .to(introAlias, { autoAlpha: 1, duration: 0.18 }, 1.22)
+          .to(introAlias, { autoAlpha: 0, duration: 0.18 }, 2.32)
+          .to(introAntony, { autoAlpha: 1, duration: 0.18 }, 2.34)
+          .to(intro, { autoAlpha: 0, duration: 0.24 }, 3.16);
       } else {
         const softHero = document.querySelector<HTMLElement>("[data-hero-image='soft']");
         const visibleTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-image='sharp'], [data-hero-content], [data-hero-card], .site-header"));
@@ -282,7 +346,7 @@ export function MotionProvider() {
       const dock = document.querySelector<HTMLElement>("[data-header-dock]");
       const dockTrigger = hero ?? document.querySelector<HTMLElement>("main");
       const dockMedia = gsap.matchMedia();
-      if (siteHeader && topbar && dock && dockTrigger && !reduced) {
+      if (siteHeader && topbar && dock && dockTrigger && !reduced && !liteMotion) {
         const heroActionItems = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-action]"));
         const dockActionItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-action]"));
         const headerTransferItems = Array.from(topbar.querySelectorAll<HTMLElement>("[data-header-transfer]"));
@@ -468,7 +532,7 @@ export function MotionProvider() {
             const clone = item.cloneNode(true) as HTMLElement;
             clone.removeAttribute("data-dock-transfer");
             clone.setAttribute("tabindex", "-1");
-            clone.querySelectorAll<HTMLElement>("span").forEach((label) => label.remove());
+            clone.querySelectorAll<HTMLElement>(".dock-label-full").forEach((label) => label.remove());
             Object.assign(clone.style, {
               position: "absolute",
               left: `${source.left}px`,
@@ -486,7 +550,11 @@ export function MotionProvider() {
               backgroundColor: "rgba(17, 19, 15, 0.98)",
               color: "#ffffff",
               boxShadow: "0 8px 20px rgba(17, 19, 15, 0.12)",
-              willChange: "left, top, width, height, background-color",
+              flexDirection: "column",
+              gap: "2px",
+              fontSize: "8px",
+              transformOrigin: "top left",
+              willChange: "transform, background-color",
             });
             layer.append(clone);
             return clone;
@@ -498,10 +566,10 @@ export function MotionProvider() {
             .set(transferItems, { autoAlpha: 1 }, 0.05)
             .set(menuToggle, { autoAlpha: 0 }, 0.055)
             .to(transferItems, {
-              left: (index) => targetAt(index).left,
-              top: (index) => targetAt(index).top,
-              width: (index) => targetAt(index).width,
-              height: (index) => targetAt(index).height,
+              x: (index) => targetAt(index).left - source.left,
+              y: (index) => targetAt(index).top - source.top,
+              scaleX: (index) => targetAt(index).width / Math.max(source.width, 1),
+              scaleY: (index) => targetAt(index).height / Math.max(source.height, 1),
               backgroundColor: (index) => targetAt(index).backgroundColor,
               borderColor: "rgba(255, 255, 255, 0.52)",
               ease: "none",
@@ -565,7 +633,7 @@ export function MotionProvider() {
             backgroundColor: "rgba(226, 226, 220, 0)",
             borderColor: "rgba(255, 255, 255, 0)",
             boxShadow: "0 18px 46px rgba(17, 19, 15, 0)",
-            backdropFilter: "blur(0px) saturate(1)",
+            backdropFilter: "none",
           });
           gsap.set(dockRevealItems, {
             autoAlpha: 0,
@@ -683,7 +751,7 @@ export function MotionProvider() {
             backgroundColor: "rgba(226, 226, 220, 0)",
             borderColor: "rgba(255, 255, 255, 0)",
             boxShadow: "0 14px 36px rgba(17, 19, 15, 0)",
-            backdropFilter: "blur(0px) saturate(1)",
+            backdropFilter: "none",
           });
           gsap.set(dockActionItems, { autoAlpha: 0 });
 
@@ -724,10 +792,10 @@ export function MotionProvider() {
             .to(".header-brand", { borderColor: "rgba(255, 255, 255, 0)", duration: 0.22, ease: "none" }, 0.03)
             .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
-              backgroundColor: "rgba(226, 226, 220, 0.44)",
+              backgroundColor: "rgba(226, 226, 220, 0.86)",
               borderColor: "rgba(255, 255, 255, 0.46)",
               boxShadow: "0 14px 36px rgba(17, 19, 15, 0.14)",
-              backdropFilter: "blur(16px) saturate(0.84)",
+              backdropFilter: "none",
               duration: 0.24,
               ease: "none",
             }, 0.7);
@@ -775,14 +843,70 @@ export function MotionProvider() {
         });
       }
 
+      if (siteHeader && topbar && dock && dockTrigger && (reduced || liteMotion)) {
+        const initialHeader = siteHeader.getBoundingClientRect();
+        const compactDock = mobileMotion;
+        const railHeight = () => Math.min(360, window.innerHeight - 150);
+        const railTop = () => Math.max(84, (window.innerHeight - railHeight()) / 2);
+        const setAccessibilityState = (docked: boolean) => {
+          topbar.toggleAttribute("inert", docked);
+          dock.toggleAttribute("inert", !docked);
+          topbar.setAttribute("aria-hidden", String(docked));
+          dock.setAttribute("aria-hidden", String(!docked));
+          dock.style.pointerEvents = docked ? "auto" : "none";
+          siteHeader.classList.toggle("is-docked", docked);
+          window.dispatchEvent(new CustomEvent("header-dock-change", { detail: { docked } }));
+        };
+        const showDock = () => {
+          setAccessibilityState(true);
+          gsap.killTweensOf([siteHeader, topbar, dock]);
+          gsap.to(siteHeader, {
+            top: compactDock ? railTop() : 14,
+            left: compactDock ? window.innerWidth - 88 : 14,
+            width: compactDock ? 78 : 238,
+            height: compactDock ? railHeight() : window.innerHeight - 28,
+            duration: 0.28,
+            ease: "power2.out",
+          });
+          gsap.to(topbar, { autoAlpha: 0, duration: 0.1, ease: "none" });
+          gsap.fromTo(
+            dock,
+            { autoAlpha: 0, backgroundColor: "rgba(226, 226, 220, 0)" },
+            { autoAlpha: 1, backgroundColor: "rgba(226, 226, 220, 0.9)", duration: 0.2, delay: 0.08, ease: "none" },
+          );
+        };
+        const showTopbar = () => {
+          setAccessibilityState(false);
+          gsap.killTweensOf([siteHeader, topbar, dock]);
+          gsap.to(dock, { autoAlpha: 0, duration: 0.1, ease: "none" });
+          gsap.to(siteHeader, {
+            top: initialHeader.top,
+            left: initialHeader.left,
+            width: initialHeader.width,
+            height: initialHeader.height,
+            duration: 0.25,
+            ease: "power2.out",
+          });
+          gsap.to(topbar, { autoAlpha: 1, duration: 0.16, delay: 0.08, ease: "none" });
+        };
+        setAccessibilityState(false);
+        gsap.set(dock, { autoAlpha: 0, pointerEvents: "none" });
+        ScrollTrigger.create({
+          trigger: dockTrigger,
+          start: "bottom 80%",
+          onEnter: showDock,
+          onLeaveBack: showTopbar,
+        });
+      }
+
       gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
         gsap.fromTo(
           element,
-          { autoAlpha: 0, y: 38 },
+          { autoAlpha: 0, y: lightweightMotion ? 18 : 38 },
           {
             autoAlpha: 1,
             y: 0,
-            duration: reduced ? 0 : 0.68,
+            duration: reduced ? 0 : lightweightMotion ? 0.42 : 0.68,
             ease: "power3.out",
             scrollTrigger: reduced ? undefined : {
               trigger: element,
@@ -918,10 +1042,12 @@ export function MotionProvider() {
 
       const promiseSection = document.querySelector<HTMLElement>("[data-promise-reveal]");
       const promisePixels = Array.from(document.querySelectorAll<HTMLElement>("[data-promise-pixel]"));
+      const promiseCover = promiseSection?.querySelector<HTMLElement>(".promise-pixel-cover") ?? null;
       const promiseImage = promiseSection?.querySelector<HTMLElement>("[data-promise-identity] img") ?? null;
       const promiseName = promiseSection?.querySelector<HTMLElement>("[data-promise-name]") ?? null;
 
       media.add("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
+        if (liteMotion) return;
         if (!promiseSection || !promisePixels.length || !promiseImage || !promiseName) return;
         const timers = new Map<HTMLElement, number>();
         const imageX = gsap.quickTo(promiseImage, "x", { duration: 0.62, ease: "power3.out" });
@@ -998,16 +1124,13 @@ export function MotionProvider() {
       });
 
       media.add("(hover: none) and (prefers-reduced-motion: no-preference)", () => {
-        if (!promiseSection || !promisePixels.length || !promiseImage) return;
-        const columns = window.innerWidth <= 640 ? 7 : 8;
-        const targets = promisePixels.filter((_, index) => (index + Math.floor(index / columns)) % 3 !== 0);
+        if (!promiseSection || !promiseCover || !promiseImage) return;
         const pixelTween = gsap.fromTo(
-          targets,
+          promiseCover,
           { autoAlpha: 1 },
           {
-            autoAlpha: 0.06,
+            autoAlpha: 0.08,
             ease: "none",
-            stagger: { each: 0.008, grid: [Math.ceil(promisePixels.length / columns), columns], from: "center" },
             scrollTrigger: {
               trigger: promiseSection,
               start: "top 84%",
@@ -1035,6 +1158,37 @@ export function MotionProvider() {
           imageTween.kill();
         };
       });
+
+      if (liteMotion && !mobileMotion && promiseSection && promiseCover && promiseImage) {
+        gsap.fromTo(
+          promiseCover,
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0.08,
+            ease: "none",
+            scrollTrigger: {
+              trigger: promiseSection,
+              start: "top 84%",
+              end: "center 46%",
+              scrub: 0.4,
+            },
+          },
+        );
+        gsap.fromTo(
+          promiseImage,
+          { yPercent: 3 },
+          {
+            yPercent: -3,
+            ease: "none",
+            scrollTrigger: {
+              trigger: promiseSection,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.45,
+            },
+          },
+        );
+      }
     }, document.body);
 
     requestAnimationFrame(() => ScrollTrigger.refresh());

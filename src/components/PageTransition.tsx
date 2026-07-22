@@ -73,11 +73,6 @@ export function PageTransition() {
       event.preventDefault();
       event.stopPropagation();
 
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        router.push(routeHref);
-        return;
-      }
-
       transitionActive.current = true;
       transitionFrame.current = requestAnimationFrame(() => {
         transitionFrame.current = 0;
@@ -89,6 +84,9 @@ export function PageTransition() {
         const tiles = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-page-transition-tile]") ?? [])
           .filter((tile) => getComputedStyle(tile).display !== "none");
         const trails = tiles.flatMap((tile) => Array.from(tile.querySelectorAll<HTMLElement>("[data-page-transition-trail]")));
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const mobile = matchMedia("(max-width: 900px)").matches;
+        const lite = document.documentElement.dataset.motion === "lite";
         if (!overlay || !left || !right || !loader || !quote) {
           transitionActive.current = false;
           router.push(routeHref);
@@ -105,6 +103,27 @@ export function PageTransition() {
         gsap.set(quote, { autoAlpha: 0, y: 14 });
         gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
         gsap.set(trails, { autoAlpha: 0, yPercent: -180 });
+
+        if (reduced) {
+          gsap.set([left, right], { xPercent: 0 });
+          gsap.set(tiles, { scaleY: 1 });
+          gsap.set(loader, { autoAlpha: 1, scale: 1, rotation: 0 });
+          gsap.set(quote, { autoAlpha: 1, y: 0 });
+          gsap.delayedCall(0.28, () => router.push(routeHref));
+          return;
+        }
+
+        if (mobile || lite) {
+          gsap.set([left, right], { xPercent: 0 });
+          gsap.timeline({
+            defaults: { ease: "power3.inOut" },
+            onComplete: () => router.push(routeHref),
+          })
+            .to(tiles, { scaleY: 1, duration: 0.26, stagger: { each: 0.006, from: "start" } }, 0)
+            .to(loader, { autoAlpha: 1, scale: 1, rotation: 180, duration: 0.3, ease: "power2.out" }, 0.12)
+            .to(quote, { autoAlpha: 1, y: 0, duration: 0.24, ease: "power2.out" }, 0.16);
+          return;
+        }
 
         gsap.timeline({
           defaults: { ease: "power4.inOut" },
@@ -142,13 +161,42 @@ export function PageTransition() {
     quote.textContent = quoteForPath(pathname || "/");
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobile = matchMedia("(max-width: 900px)").matches;
+    const lite = document.documentElement.dataset.motion === "lite";
     if (reduced) {
-      gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
-      finishTransition();
+      if (!transitionActive.current) {
+        gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
+        finishTransition();
+        return;
+      }
+      gsap.to([loader, quote], { autoAlpha: 0, duration: 0.12, ease: "none" });
+      gsap.to(overlay, {
+        autoAlpha: 0,
+        duration: 0.18,
+        delay: 0.08,
+        ease: "none",
+        onComplete: () => {
+          gsap.set(overlay, { pointerEvents: "none" });
+          finishTransition();
+        },
+      });
       return;
     }
 
     const reveal = () => {
+      if (mobile || lite) {
+        gsap.timeline({
+          defaults: { ease: "power3.inOut" },
+          onComplete: () => {
+            gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
+            finishTransition();
+          },
+        })
+          .to([loader, quote], { autoAlpha: 0, y: -6, duration: 0.18, ease: "power2.in" }, 0)
+          .to(tiles, { scaleY: 0, duration: 0.24, stagger: { each: 0.006, from: "end" } }, 0.04);
+        return;
+      }
+
       gsap.timeline({
         defaults: { ease: "power4.inOut" },
         onComplete: () => {
@@ -179,6 +227,14 @@ export function PageTransition() {
     gsap.set(quote, { autoAlpha: 0, y: 14 });
     gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
     gsap.set(trails, { autoAlpha: 0, yPercent: -180 });
+    if (mobile || lite) {
+      gsap.set([left, right], { xPercent: 0 });
+      gsap.timeline({ defaults: { ease: "power3.inOut" }, onComplete: reveal })
+        .to(tiles, { scaleY: 1, duration: 0.24, stagger: { each: 0.006, from: "start" } }, 0)
+        .to(loader, { autoAlpha: 1, scale: 1, rotation: 150, duration: 0.28 }, 0.1)
+        .to(quote, { autoAlpha: 1, y: 0, duration: 0.22, ease: "power2.out" }, 0.14);
+      return;
+    }
     gsap.timeline({ defaults: { ease: "power4.inOut" }, onComplete: reveal })
       .to([left, right], { xPercent: 0, duration: 0.34 }, 0)
       .to(tiles, { scaleY: 1, duration: 0.3, stagger: { each: 0.01, from: "start" } }, 0.02)
