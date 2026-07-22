@@ -95,16 +95,27 @@ export function MotionProvider() {
       const introAlias = document.querySelector<HTMLElement>("[data-intro-alias]");
       const introAntony = document.querySelector<HTMLElement>("[data-intro-antony]");
       const heroName = document.querySelector<HTMLElement>("[data-hero-name]");
+      let introTokens: HTMLElement[] = [];
 
       if (intro && introPrimary && introLead && introTony && introAlias) {
-        introLead.textContent = returningHome ? returnGreeting.opening : "Hi, I'm ";
+        const tokenLabels = returningHome ? returnGreeting.opening.split(/\s+/) : ["Hi", ",", "I'm"];
+        const fragment = document.createDocumentFragment();
+        tokenLabels.forEach((label, index) => {
+          const token = document.createElement("span");
+          token.className = "intro-token";
+          if ((!returningHome && index === 0) || (returningHome && index === tokenLabels.length - 1)) token.classList.add("intro-token-tight");
+          token.textContent = label;
+          fragment.append(token);
+        });
+        introLead.replaceChildren(fragment);
+        introTokens = Array.from(introLead.querySelectorAll<HTMLElement>(".intro-token"));
         introTony.textContent = returningHome ? "" : "TONY.";
-        introAlias.textContent = returningHome ? returnGreeting.followUp : "or else you can call me";
+        introAlias.textContent = returningHome ? returnGreeting.followUp : "or you can call me";
         intro.toggleAttribute("data-returning", returningHome);
         introPrimary.toggleAttribute("data-returning", returningHome);
       }
 
-      if (hero && intro && introPrimary && introAlias && introAntony && heroName && playHomeIntro && !reduced && window.scrollY < 80) {
+      if (hero && intro && introPrimary && introTony && introAlias && introAntony && heroName && playHomeIntro && !reduced && window.scrollY < 80) {
         const source = introAntony.getBoundingClientRect();
         const target = heroName.getBoundingClientRect();
         const shiftX = target.left + target.width / 2 - (source.left + source.width / 2);
@@ -116,10 +127,32 @@ export function MotionProvider() {
         gsap.set("[data-hero-image='sharp']", { scale: 0.95, yPercent: 6 });
         gsap.set("[data-hero-image='soft']", { autoAlpha: 0.72, scale: 0.91, yPercent: 8 });
         gsap.set([introAlias, introAntony], { autoAlpha: 0 });
+        gsap.set([...introTokens, introTony], { autoAlpha: 0 });
+
+        const tokenPatterns = [
+          [{ x: 0, y: 28, rotation: 0 }, { x: 0, y: -18, rotation: 0 }, { x: 0, y: 24, rotation: 0 }],
+          [{ x: -16, y: 18, rotation: -2 }, { x: 8, y: 24, rotation: 1 }, { x: 14, y: -14, rotation: 2 }],
+          [{ x: 10, y: -22, rotation: 1 }, { x: -10, y: 20, rotation: -1 }, { x: 0, y: 26, rotation: 0 }],
+        ];
+        const tokenPattern = tokenPatterns[(returningHome ? returnVisit.current + 1 : 0) % tokenPatterns.length];
+        const tonyRevealAt = Math.min(0.9, 0.34 + introTokens.length * 0.11);
 
         const introTimeline = gsap.timeline({ defaults: { ease: "power3.out" } });
         introTimeline
-          .fromTo(intro, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.44 })
+          .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.32 })
+          .fromTo(
+            introTokens,
+            {
+              autoAlpha: 0,
+              x: (index) => tokenPattern[index % tokenPattern.length].x,
+              y: (index) => tokenPattern[index % tokenPattern.length].y,
+              rotation: (index) => tokenPattern[index % tokenPattern.length].rotation,
+              filter: "blur(4px)",
+            },
+            { autoAlpha: 1, x: 0, y: 0, rotation: 0, filter: "blur(0px)", duration: 0.48, stagger: 0.11 },
+            0.1,
+          )
+          .fromTo(introTony, { autoAlpha: 0, scale: 0.94, filter: "blur(9px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.52 }, tonyRevealAt)
           .to(introPrimary, { autoAlpha: 0, y: -24, scale: 0.96, duration: 0.38 }, 2.38)
           .fromTo(introAlias, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 2.52)
           .to(introAlias, { autoAlpha: 0, x: -18, duration: 0.34 }, 4.86)
@@ -187,8 +220,8 @@ export function MotionProvider() {
             const bounds = hero.getBoundingClientRect();
             const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
             const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-            portraitX(x * 15);
-            portraitY(y * 9);
+            portraitX(x * 42);
+            portraitY(y * 13);
             ambientX?.(x * -10);
             ambientY?.(y * -7);
             cardMotion.forEach((motion) => {
@@ -224,6 +257,85 @@ export function MotionProvider() {
       if (siteHeader && topbar && dock && dockTrigger && !reduced) {
         const dockItems = Array.from(dock.children) as HTMLElement[];
         const topbarItems = Array.from(topbar.children) as HTMLElement[];
+        const heroActionItems = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-action]"));
+        const dockActionItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-action]"));
+        const addActionTransfer = (
+          timeline: gsap.core.Timeline,
+          targetAt: (index: number) => { centerX: number; centerY: number; width: number },
+        ) => {
+          if (!hero || heroActionItems.length === 0 || heroActionItems.length !== dockActionItems.length) return null;
+
+          const layer = document.createElement("div");
+          layer.setAttribute("aria-hidden", "true");
+          Object.assign(layer.style, {
+            position: "fixed",
+            inset: "0",
+            zIndex: "101",
+            pointerEvents: "none",
+          });
+          document.body.append(layer);
+
+          const sourceRects = heroActionItems.map((item) => item.getBoundingClientRect());
+          const transferItems = heroActionItems.map((item, index) => {
+            const clone = item.cloneNode(true) as HTMLElement;
+            const rect = sourceRects[index];
+            clone.removeAttribute("data-hero-action");
+            clone.setAttribute("tabindex", "-1");
+            Object.assign(clone.style, {
+              position: "absolute",
+              left: `${rect.left}px`,
+              top: `${rect.top}px`,
+              width: `${rect.width}px`,
+              height: `${rect.height}px`,
+              margin: "0",
+              whiteSpace: "nowrap",
+              border: "1px solid rgba(17, 19, 15, 0.2)",
+              boxShadow: "0 12px 28px rgba(17, 19, 15, 0.14)",
+              transformOrigin: "center center",
+            });
+            layer.append(clone);
+            return clone;
+          });
+
+          gsap.set(transferItems, { autoAlpha: 0 });
+          timeline
+            .to(heroActionItems, { autoAlpha: 0, duration: 0.1, ease: "none" }, 0.05)
+            .to(transferItems, { autoAlpha: 1, duration: 0.1, ease: "none" }, 0.05)
+            .to(transferItems, {
+              x: (index) => {
+                const source = sourceRects[index];
+                const sourceCenter = source.left + source.width / 2;
+                return (targetAt(index).centerX - sourceCenter) * 0.48;
+              },
+              y: (index) => {
+                const source = sourceRects[index];
+                return window.innerHeight * 0.7 - (source.top + source.height / 2);
+              },
+              scale: (index) => {
+                const finalScale = targetAt(index).width / Math.max(sourceRects[index].width, 1);
+                return 1 - (1 - finalScale) * 0.48;
+              },
+              ease: "none",
+              duration: 0.47,
+            }, 0.08)
+            .to(transferItems, {
+              x: (index) => {
+                const source = sourceRects[index];
+                return targetAt(index).centerX - (source.left + source.width / 2);
+              },
+              y: (index) => {
+                const source = sourceRects[index];
+                return targetAt(index).centerY - (source.top + source.height / 2);
+              },
+              scale: (index) => targetAt(index).width / Math.max(sourceRects[index].width, 1),
+              ease: "none",
+              duration: 0.33,
+            }, 0.55)
+            .to(transferItems, { autoAlpha: 0, duration: 0.12, ease: "none" }, 0.84)
+            .to(dockActionItems, { autoAlpha: 1, duration: 0.14, stagger: 0.02, ease: "none" }, 0.82);
+
+          return layer;
+        };
         let dockedState: boolean | null = null;
         const setDockState = (docked: boolean) => {
           if (dockedState === docked) return;
@@ -287,6 +399,7 @@ export function MotionProvider() {
             transformOrigin: "left center",
             filter: "blur(7px)",
           });
+          gsap.set(dockActionItems, { autoAlpha: 0 });
 
           const dockTimeline = gsap.timeline({
             scrollTrigger: {
@@ -366,7 +479,14 @@ export function MotionProvider() {
               duration: 0.28,
             }, 0.62);
 
+          const transferLayer = addActionTransfer(dockTimeline, (index) => ({
+            centerX: 23 + 54 + index * 113,
+            centerY: window.innerHeight - 49,
+            width: 108,
+          }));
+
           return () => {
+            transferLayer?.remove();
             siteHeader.style.pointerEvents = "";
             dockedState = null;
             setDockState(false);
@@ -393,6 +513,7 @@ export function MotionProvider() {
             rotationY: -28,
             filter: "blur(0px)",
           });
+          gsap.set(dockActionItems, { autoAlpha: 0 });
           if (mobileBrand) gsap.set(mobileBrand, { autoAlpha: 0, y: -34, scale: 0.68, filter: "blur(0px)" });
 
           const railHeight = () => Math.min(310, window.innerHeight - 168);
@@ -473,7 +594,14 @@ export function MotionProvider() {
               duration: 0.28,
             }, 0.52);
 
+          const transferLayer = addActionTransfer(mobileDock, (index) => ({
+            centerX: window.innerWidth - 50 + index * 27,
+            centerY: railTop() + railHeight() - 27,
+            width: 24,
+          }));
+
           return () => {
+            transferLayer?.remove();
             siteHeader.style.pointerEvents = "";
             dockedState = null;
             setDockState(false);

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ArrowUpRight, Check } from "lucide-react";
+import { ArrowDown, ArrowUpRight, CalendarDays, Check, Handshake } from "lucide-react";
 import { capabilities, profile, projects, services } from "@/data/site";
 import { HeroTypingCards } from "@/components/HeroTypingCards";
 
@@ -20,13 +20,6 @@ export default function Home() {
           <span /><span /><span />
         </div>
         <div className="hero-map-background" aria-hidden="true">
-          <Image
-            src={assetPath("/images/kenya-outline.webp")}
-            alt=""
-            fill
-            sizes="100vw"
-            priority
-          />
           <svg viewBox="0 0 326 379" preserveAspectRatio="none">
             <path
               pathLength="1"
@@ -35,8 +28,15 @@ export default function Home() {
           </svg>
         </div>
         <div className="intro-greeting" data-intro-greeting aria-hidden="true">
-          <div className="intro-primary" data-intro-primary><span data-intro-lead>Hi, I&apos;m </span><strong>TONY.</strong></div>
-          <span className="intro-alias" data-intro-alias>or else you can call me</span>
+          <div className="intro-primary" data-intro-primary>
+            <span className="intro-lead" data-intro-lead>
+              <span className="intro-token intro-token-tight">Hi</span>
+              <span className="intro-token">,</span>
+              <span className="intro-token">I&apos;m</span>
+            </span>
+            <strong>TONY.</strong>
+          </div>
+          <span className="intro-alias" data-intro-alias>or you can call me</span>
           <strong className="intro-antony" data-intro-antony>ANTONY</strong>
         </div>
 
@@ -100,8 +100,8 @@ export default function Home() {
           <h1 id="home-title">Websites built<br />for real work.</h1>
           <p>I design fast, credible digital homes for businesses, professionals and organisations.</p>
           <div className="hero-actions">
-            <Link className="button button-acid" href="/work/">Explore work <ArrowUpRight size={18} /></Link>
-            <Link className="button button-ghost" href="/about/">About Antony <ArrowRight size={18} /></Link>
+            <Link className="button button-acid" data-hero-action="book" href="/contact/">Book a call <CalendarDays size={18} /></Link>
+            <a className="button button-ghost" data-hero-action="hire" href={`mailto:${profile.email}?subject=Project enquiry`}>Hire me <Handshake size={18} /></a>
           </div>
         </div>
 

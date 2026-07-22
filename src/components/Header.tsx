@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowUpRight, BriefcaseBusiness, House, Layers3, Mail, Menu, UserRound, X } from "lucide-react";
+import { ArrowUpRight, BriefcaseBusiness, CalendarDays, Handshake, House, Layers3, Mail, Menu, UserRound, X } from "lucide-react";
 import { nav, profile } from "@/data/site";
 
 const dockIcons = {
@@ -69,7 +69,14 @@ export function Header() {
             </div>
           </div>
           <a className="dock-email" href={`mailto:${profile.email}`}><Mail size={15} /><span>{profile.email}</span></a>
-          <Link className="dock-cta" href="/contact/">Start a project <ArrowUpRight size={16} /></Link>
+          <div className="dock-actions">
+            <Link className="dock-action dock-action-primary" data-dock-action="book" href="/contact/" title="Book a call">
+              <CalendarDays size={15} /><span>Book a call</span>
+            </Link>
+            <a className="dock-action" data-dock-action="hire" href={`mailto:${profile.email}?subject=Project enquiry`} title="Hire Antony">
+              <Handshake size={15} /><span>Hire me</span>
+            </a>
+          </div>
         </div>
     </header>
   );
