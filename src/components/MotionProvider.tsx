@@ -178,12 +178,17 @@ export function MotionProvider() {
           });
 
         if (richMotion) {
-          gsap.to("[data-hero-name]", {
-            yPercent: -8,
-            opacity: 0.42,
-            ease: "none",
-            scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true },
-          });
+          gsap.fromTo(
+            "[data-hero-name]",
+            { yPercent: 0, autoAlpha: 1 },
+            {
+              yPercent: -8,
+              autoAlpha: 0.42,
+              ease: "none",
+              immediateRender: false,
+              scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true },
+            },
+          );
           gsap.to("[data-hero-portrait]", {
             autoAlpha: 0.08,
             scale: 0.985,
@@ -255,10 +260,13 @@ export function MotionProvider() {
       const dockTrigger = hero ?? document.querySelector<HTMLElement>("main");
       const dockMedia = gsap.matchMedia();
       if (siteHeader && topbar && dock && dockTrigger && !reduced) {
-        const dockItems = Array.from(dock.children) as HTMLElement[];
-        const topbarItems = Array.from(topbar.children) as HTMLElement[];
         const heroActionItems = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-action]"));
         const dockActionItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-action]"));
+        const headerTransferItems = Array.from(topbar.querySelectorAll<HTMLElement>("[data-header-transfer]"));
+        const dockTransferItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-transfer]"));
+        const dockRevealItems = [".dock-intro", ".dock-tools", ".dock-email"]
+          .map((selector) => dock.querySelector<HTMLElement>(selector))
+          .filter((item): item is HTMLElement => Boolean(item));
         const addActionTransfer = (
           timeline: gsap.core.Timeline,
           targetAt: (index: number) => { centerX: number; centerY: number; width: number },
@@ -267,6 +275,7 @@ export function MotionProvider() {
 
           const layer = document.createElement("div");
           layer.setAttribute("aria-hidden", "true");
+          layer.dataset.actionTransferLayer = "";
           Object.assign(layer.style, {
             position: "fixed",
             inset: "0",
@@ -336,6 +345,152 @@ export function MotionProvider() {
 
           return layer;
         };
+        const addHeaderTransfer = (
+          timeline: gsap.core.Timeline,
+          targetAt: (index: number) => { left: number; top: number; width: number; height: number; backgroundColor: string },
+          sourceItems = headerTransferItems,
+          targetItems = dockTransferItems,
+        ) => {
+          if (sourceItems.length === 0 || sourceItems.length !== targetItems.length) return null;
+
+          const layer = document.createElement("div");
+          layer.setAttribute("aria-hidden", "true");
+          layer.dataset.headerTransferLayer = "";
+          Object.assign(layer.style, {
+            position: "fixed",
+            inset: "0",
+            zIndex: "102",
+            pointerEvents: "none",
+          });
+          document.body.append(layer);
+
+          const sourceRects = sourceItems.map((item) => item.getBoundingClientRect());
+          const transferItems = sourceItems.map((item, index) => {
+            const clone = item.cloneNode(true) as HTMLElement;
+            const rect = sourceRects[index];
+            const styles = getComputedStyle(item);
+            clone.removeAttribute("data-header-transfer");
+            clone.setAttribute("tabindex", "-1");
+            Object.assign(clone.style, {
+              position: "absolute",
+              left: `${rect.left}px`,
+              top: `${rect.top}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: styles.gap,
+              width: `${rect.width}px`,
+              height: `${rect.height}px`,
+              margin: "0",
+              padding: styles.padding,
+              boxSizing: "border-box",
+              border: "1px solid rgba(255, 255, 255, 0.16)",
+              borderRadius: "3px",
+              backgroundColor: "rgba(17, 19, 15, 0.98)",
+              color: styles.color,
+              fontFamily: styles.fontFamily,
+              fontSize: styles.fontSize,
+              fontWeight: styles.fontWeight,
+              lineHeight: styles.lineHeight,
+              whiteSpace: "nowrap",
+              boxShadow: "0 8px 20px rgba(17, 19, 15, 0.12)",
+              willChange: "left, top, width, height, background-color",
+            });
+            layer.append(clone);
+            return clone;
+          });
+
+          const brandText = transferItems[0]?.querySelectorAll<HTMLElement>("strong, span") ?? [];
+          gsap.set(sourceItems, { autoAlpha: 1 });
+          gsap.set(targetItems, { autoAlpha: 0 });
+          gsap.set(transferItems, { autoAlpha: 0 });
+          gsap.set(brandText, { color: "#ffffff" });
+
+          timeline
+            .set(transferItems, { autoAlpha: 1 }, 0.04)
+            .set(sourceItems, { autoAlpha: 0 }, 0.045)
+            .to(transferItems, {
+              left: (index) => targetAt(index).left,
+              top: (index) => targetAt(index).top,
+              width: (index) => targetAt(index).width,
+              height: (index) => targetAt(index).height,
+              backgroundColor: (index) => targetAt(index).backgroundColor,
+              borderColor: "rgba(255, 255, 255, 0.52)",
+              boxShadow: "0 8px 22px rgba(17, 19, 15, 0.08)",
+              ease: "none",
+              duration: 0.855,
+            }, 0.045)
+            .to(transferItems, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
+            .to(brandText, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
+            .set(targetItems, { autoAlpha: 1 }, 0.9)
+            .set(transferItems, { autoAlpha: 0 }, 0.905);
+
+          return layer;
+        };
+        const addMobileNavTransfer = (
+          timeline: gsap.core.Timeline,
+          menuToggle: HTMLElement,
+          targetItems: HTMLElement[],
+          targetAt: (index: number) => { left: number; top: number; width: number; height: number; backgroundColor: string },
+        ) => {
+          if (targetItems.length === 0) return null;
+
+          const layer = document.createElement("div");
+          layer.setAttribute("aria-hidden", "true");
+          layer.dataset.mobileNavTransferLayer = "";
+          Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "102", pointerEvents: "none" });
+          document.body.append(layer);
+          const source = menuToggle.getBoundingClientRect();
+          const transferItems = targetItems.map((item) => {
+            const clone = item.cloneNode(true) as HTMLElement;
+            clone.removeAttribute("data-dock-transfer");
+            clone.setAttribute("tabindex", "-1");
+            clone.querySelector<HTMLElement>("span")?.remove();
+            Object.assign(clone.style, {
+              position: "absolute",
+              left: `${source.left}px`,
+              top: `${source.top}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: `${source.width}px`,
+              height: `${source.height}px`,
+              margin: "0",
+              padding: "0",
+              boxSizing: "border-box",
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              borderRadius: "3px",
+              backgroundColor: "rgba(17, 19, 15, 0.98)",
+              color: "#ffffff",
+              boxShadow: "0 8px 20px rgba(17, 19, 15, 0.12)",
+              willChange: "left, top, width, height, background-color",
+            });
+            layer.append(clone);
+            return clone;
+          });
+
+          gsap.set(targetItems, { autoAlpha: 0 });
+          gsap.set(transferItems, { autoAlpha: 0 });
+          timeline
+            .set(transferItems, { autoAlpha: 1 }, 0.05)
+            .set(menuToggle, { autoAlpha: 0 }, 0.055)
+            .to(transferItems, {
+              left: (index) => targetAt(index).left,
+              top: (index) => targetAt(index).top,
+              width: (index) => targetAt(index).width,
+              height: (index) => targetAt(index).height,
+              backgroundColor: (index) => targetAt(index).backgroundColor,
+              borderColor: "rgba(255, 255, 255, 0.52)",
+              ease: "none",
+              duration: 0.845,
+              stagger: 0.006,
+            }, 0.055)
+            .to(transferItems, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
+            .set(targetItems, { autoAlpha: 1 }, 0.9)
+            .set(transferItems, { autoAlpha: 0 }, 0.905);
+
+          return layer;
+        };
         let dockedState: boolean | null = null;
         const setDockState = (docked: boolean) => {
           if (dockedState === docked) return;
@@ -389,7 +544,7 @@ export function MotionProvider() {
             boxShadow: "0 18px 46px rgba(17, 19, 15, 0)",
             backdropFilter: "blur(0px) saturate(1)",
           });
-          gsap.set(dockItems, {
+          gsap.set(dockRevealItems, {
             autoAlpha: 0,
             x: (index) => 150 - index * 12,
             y: (index) => -96 + index * 18,
@@ -434,30 +589,13 @@ export function MotionProvider() {
             }, 0.02)
             .to(".header-contact", { backgroundColor: "rgba(232, 255, 30, 0)", borderColor: "rgba(255, 255, 255, 0)", duration: 0.24, ease: "none" }, 0.03)
             .to(".header-brand", { borderColor: "rgba(255, 255, 255, 0)", duration: 0.24, ease: "none" }, 0.03)
-            .to(".header-nav a", {
-              backgroundColor: "rgba(17, 19, 15, 0.74)",
-              boxShadow: "0 6px 16px rgba(17, 19, 15, 0.12)",
-              duration: 0.2,
-              ease: "none",
-            }, 0.1)
-            .to(topbarItems, {
-              x: (index) => index === 0 ? 0 : index === 1 ? -120 : -260,
-              y: (index) => index * 18,
-              scale: (index) => index === 0 ? 0.96 : index === 1 ? 0.82 : 0.65,
-              rotationY: (index) => index === 0 ? 0 : index === 1 ? 12 : 24,
-              rotationZ: (index) => index % 2 ? -5 : 5,
-              transformOrigin: "left center",
-              ease: "none",
-              stagger: 0.025,
-              duration: 0.76,
-            }, 0.06)
-            .to(topbarItems, {
+            .to(".header-contact", {
               autoAlpha: 0,
-              filter: "blur(3px)",
-              duration: 0.22,
+              x: 42,
+              duration: 0.36,
               ease: "none",
-            }, 0.6)
-            .set(topbar, { autoAlpha: 0 }, 0.82)
+            }, 0.22)
+            .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
               backgroundColor: "rgba(226, 226, 220, 0.38)",
               borderColor: "rgba(255, 255, 255, 0.42)",
@@ -465,8 +603,8 @@ export function MotionProvider() {
               backdropFilter: "blur(16px) saturate(0.84)",
               duration: 0.24,
               ease: "none",
-            }, 0.74)
-            .to(dockItems, {
+            }, 0.7)
+            .to(dockRevealItems, {
               autoAlpha: 1,
               x: 0,
               y: 0,
@@ -477,15 +615,33 @@ export function MotionProvider() {
               ease: "none",
               stagger: 0.018,
               duration: 0.28,
-            }, 0.62);
+            }, 0.68);
+
+          const headerTransferLayer = addHeaderTransfer(dockTimeline, (index) => {
+            if (index === 0) {
+              return { left: 23, top: 23, width: 220, height: 54, backgroundColor: "#e8ff1e" };
+            }
+            const target = dockTransferItems[index];
+            return {
+              left: 23,
+              top: window.innerHeight / 2 - 116 + (index - 1) * 44,
+              width: 220,
+              height: 39,
+              backgroundColor: target?.classList.contains("is-active") ? "#e8ff1e" : "rgba(220, 220, 214, 0.9)",
+            };
+          });
 
           const transferLayer = addActionTransfer(dockTimeline, (index) => ({
             centerX: 23 + 54 + index * 113,
             centerY: window.innerHeight - 49,
             width: 108,
           }));
+          if (!transferLayer) {
+            dockTimeline.to(dockActionItems, { autoAlpha: 1, duration: 0.18, stagger: 0.02, ease: "none" }, 0.78);
+          }
 
           return () => {
+            headerTransferLayer?.remove();
             transferLayer?.remove();
             siteHeader.style.pointerEvents = "";
             dockedState = null;
@@ -496,6 +652,7 @@ export function MotionProvider() {
         dockMedia.add("(max-width: 900px)", () => {
           const mobileItems = Array.from(dock.querySelectorAll<HTMLElement>(".dock-nav a"));
           const mobileBrand = dock.querySelector<HTMLElement>(".dock-brand");
+          const menuToggle = topbar.querySelector<HTMLElement>("[data-menu-toggle]");
           gsap.set(dock, {
             autoAlpha: 1,
             pointerEvents: "none",
@@ -505,16 +662,7 @@ export function MotionProvider() {
             boxShadow: "0 14px 36px rgba(17, 19, 15, 0)",
             backdropFilter: "blur(0px) saturate(1)",
           });
-          gsap.set(mobileItems, {
-            autoAlpha: 0,
-            x: 30,
-            y: (index) => -88 + index * 12,
-            scale: 0.58,
-            rotationY: -28,
-            filter: "blur(0px)",
-          });
           gsap.set(dockActionItems, { autoAlpha: 0 });
-          if (mobileBrand) gsap.set(mobileBrand, { autoAlpha: 0, y: -34, scale: 0.68, filter: "blur(0px)" });
 
           const railHeight = () => Math.min(310, window.innerHeight - 168);
           const railTop = () => Math.max(84, (window.innerHeight - railHeight()) / 2);
@@ -551,21 +699,7 @@ export function MotionProvider() {
               ease: "none",
             }, 0.02)
             .to(".header-brand", { borderColor: "rgba(255, 255, 255, 0)", duration: 0.22, ease: "none" }, 0.03)
-            .to(topbarItems, {
-              y: -34,
-              scale: 0.72,
-              rotationX: 24,
-              ease: "none",
-              stagger: 0.03,
-              duration: 0.76,
-            }, 0.06)
-            .to(topbarItems, {
-              autoAlpha: 0,
-              filter: "blur(3px)",
-              duration: 0.22,
-              ease: "none",
-            }, 0.6)
-            .set(topbar, { autoAlpha: 0 }, 0.82)
+            .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
               backgroundColor: "rgba(226, 226, 220, 0.44)",
               borderColor: "rgba(255, 255, 255, 0.46)",
@@ -573,34 +707,43 @@ export function MotionProvider() {
               backdropFilter: "blur(16px) saturate(0.84)",
               duration: 0.24,
               ease: "none",
-            }, 0.74)
-            .to(mobileBrand, {
-              autoAlpha: 1,
-              y: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              duration: 0.26,
-              ease: "none",
-            }, 0.52)
-            .to(mobileItems, {
-              autoAlpha: 1,
-              x: 0,
-              y: 0,
-              scale: 1,
-              rotationY: 0,
-              filter: "blur(0px)",
-              ease: "none",
-              stagger: 0.018,
-              duration: 0.28,
-            }, 0.52);
+            }, 0.7);
+
+          const mobileBrandLayer = mobileBrand && headerTransferItems[0]
+            ? addHeaderTransfer(
+              mobileDock,
+              () => ({ left: window.innerWidth - 62, top: railTop() + 5, width: 50, height: 46, backgroundColor: "#e8ff1e" }),
+              [headerTransferItems[0]],
+              [mobileBrand],
+            )
+            : null;
+          const mobileNavLayer = menuToggle
+            ? addMobileNavTransfer(mobileDock, menuToggle, mobileItems, (index) => {
+              const navTop = railTop() + 55;
+              const navHeight = railHeight() - 106;
+              const rowHeight = (navHeight - 16) / 5;
+              return {
+                left: window.innerWidth - 62,
+                top: navTop + index * (rowHeight + 4),
+                width: 50,
+                height: rowHeight,
+                backgroundColor: mobileItems[index]?.classList.contains("is-active") ? "#e8ff1e" : "rgba(220, 220, 214, 0.9)",
+              };
+            })
+            : null;
 
           const transferLayer = addActionTransfer(mobileDock, (index) => ({
             centerX: window.innerWidth - 50 + index * 27,
             centerY: railTop() + railHeight() - 27,
             width: 24,
           }));
+          if (!transferLayer) {
+            mobileDock.to(dockActionItems, { autoAlpha: 1, duration: 0.18, stagger: 0.02, ease: "none" }, 0.78);
+          }
 
           return () => {
+            mobileBrandLayer?.remove();
+            mobileNavLayer?.remove();
             transferLayer?.remove();
             siteHeader.style.pointerEvents = "";
             dockedState = null;

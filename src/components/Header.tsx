@@ -30,11 +30,11 @@ export function Header() {
   return (
     <header className={home ? "site-header site-header-home" : "site-header"} data-site-header data-home-header={home ? "" : undefined}>
       <div className="topbar-shell" data-header-top>
-        <Link className="header-brand" href="/" aria-label="Antony Mburu home" onClick={() => setOpen(false)}>
+        <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => setOpen(false)}>
           <strong>ANTONY</strong><span>MBURU</span>
         </Link>
 
-        <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="site-menu" onClick={() => setOpen((value) => !value)}>
+        <button className="menu-toggle" data-menu-toggle type="button" aria-expanded={open} aria-controls="site-menu" onClick={() => setOpen((value) => !value)}>
           {open ? <X size={20} /> : <Menu size={20} />}
           <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
         </button>
@@ -42,7 +42,7 @@ export function Header() {
         <nav className={open ? "header-nav is-open" : "header-nav"} id="site-menu" aria-label="Primary navigation">
           {nav.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
-            return <Link className={active ? "is-active" : ""} href={item.href} key={item.href} onClick={() => setOpen(false)}>{item.label}</Link>;
+            return <Link className={active ? "is-active" : ""} data-header-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>{item.label}</Link>;
           })}
         </nav>
 
@@ -52,7 +52,7 @@ export function Header() {
       </div>
 
       <div className="home-dock-shell" data-header-dock aria-hidden="true">
-          <Link className="dock-brand" href="/" aria-label="Antony Mburu home">
+          <Link className="dock-brand" data-dock-transfer="brand" href="/" aria-label="Antony Mburu home">
             <strong>ANTONY</strong><span>MBURU</span>
           </Link>
           <p className="dock-intro">Website design and practical static web systems for businesses ready to look credible online.</p>
@@ -60,7 +60,7 @@ export function Header() {
             {nav.map((item) => {
               const Icon = dockIcons[item.href as keyof typeof dockIcons];
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
-              return <Link className={active ? "is-active" : ""} href={item.href} key={item.href} onClick={() => setOpen(false)}>{Icon ? <Icon size={16} /> : null}<span>{item.label}</span></Link>;
+              return <Link className={active ? "is-active" : ""} data-dock-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>{Icon ? <Icon size={16} /> : null}<span>{item.label}</span></Link>;
             })}
           </nav>
           <div className="dock-tools" aria-label="Working tools">
