@@ -14,6 +14,7 @@ export function PageTransition() {
   const previousPath = useRef(pathname);
   const transitionActive = useRef(false);
   const previousOverflow = useRef("");
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   const lockPage = () => {
     previousOverflow.current = document.body.style.overflow;
@@ -52,6 +53,11 @@ export function PageTransition() {
       if (destination.origin !== window.location.origin) return;
       if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
 
+      const routePathname = basePath && destination.pathname.startsWith(`${basePath}/`)
+        ? destination.pathname.slice(basePath.length)
+        : destination.pathname;
+      const routeHref = `${routePathname || "/"}${destination.search}${destination.hash}`;
+
       event.preventDefault();
       event.stopPropagation();
 
@@ -60,7 +66,7 @@ export function PageTransition() {
       const right = rightRef.current;
       const loader = loaderRef.current;
       if (!overlay || !left || !right || !loader || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        router.push(`${destination.pathname}${destination.search}${destination.hash}`);
+        router.push(routeHref);
         return;
       }
 
@@ -74,7 +80,7 @@ export function PageTransition() {
 
       gsap.timeline({
         defaults: { ease: "power4.inOut" },
-        onComplete: () => router.push(`${destination.pathname}${destination.search}${destination.hash}`),
+        onComplete: () => router.push(routeHref),
       })
         .to([left, right], { xPercent: 0, duration: 0.52 }, 0)
         .to(loader, { autoAlpha: 1, scale: 1, rotation: 270, duration: 0.64, ease: "power3.out" }, 0.18);
