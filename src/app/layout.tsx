@@ -10,6 +10,7 @@ import { PageTransition } from "@/components/PageTransition";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3030"),
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     title: `${profile.name} | Website Designer & Developer`,
     description: profile.summary,
     siteName: profile.brand,
-    images: [{ url: "/images/antony-studio.png", width: 941, height: 1672, alt: profile.name }],
+    images: [{ url: `${basePath}/images/antony-studio.png`, width: 941, height: 1672, alt: profile.name }],
   },
 };
 

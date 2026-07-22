@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Antony Mburu's journey from automotive engineering and self-directed IT learning to web development and cybersecurity.",
 };
 
+const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;
+
 const journeyPath = "M560 0 C560 60 560 100 560 150 C560 270 440 330 440 450 C440 570 560 630 560 750 C560 870 440 930 440 1050 C440 1170 560 1230 560 1350 C560 1470 440 1530 440 1650 C440 1770 560 1830 560 1950 C560 2070 440 2130 440 2250 C440 2320 500 2370 500 2400";
 
 export default function AboutPage() {
@@ -22,7 +24,7 @@ export default function AboutPage() {
             <p>I combine engineering discipline, self-directed technology learning and hands-on web development to build useful digital systems.</p>
           </div>
           <div className="about-portrait" data-reveal>
-            <Image src="/images/antony-studio.png" alt="Antony Mburu wearing a black suit in a studio" width={941} height={1672} sizes="(max-width: 900px) 100vw, 42vw" priority />
+            <Image src={assetPath("/images/antony-studio.png")} alt="Antony Mburu wearing a black suit in a studio" width={941} height={1672} sizes="(max-width: 900px) 100vw, 42vw" priority />
             <span>Kenya / Remote</span>
           </div>
         </div>

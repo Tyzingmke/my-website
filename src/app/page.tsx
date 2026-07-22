@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Portfolio of Antony Mburu, a Kenya-based website designer and static web systems builder.",
 };
 
+const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;
+
 export default function Home() {
   return (
     <>
@@ -19,7 +21,7 @@ export default function Home() {
         </div>
         <div className="hero-map-background" aria-hidden="true">
           <Image
-            src="/images/kenya-outline.webp"
+            src={assetPath("/images/kenya-outline.webp")}
             alt=""
             fill
             sizes="100vw"
@@ -63,7 +65,7 @@ export default function Home() {
           <Image
             className="hero-image hero-image-soft"
             data-hero-image="soft"
-            src="/images/antony-black-transparent.png"
+            src={assetPath("/images/antony-black-transparent.png")}
             alt=""
             width={941}
             height={1672}
@@ -74,7 +76,7 @@ export default function Home() {
           <Image
             className="hero-image hero-image-sharp"
             data-hero-image="sharp"
-            src="/images/antony-black-transparent.png"
+            src={assetPath("/images/antony-black-transparent.png")}
             alt="Antony Njoroge Mburu"
             width={941}
             height={1672}
@@ -83,7 +85,7 @@ export default function Home() {
           />
           <Image
             className="hero-image hero-image-edge"
-            src="/images/antony-black-transparent.png"
+            src={assetPath("/images/antony-black-transparent.png")}
             alt=""
             width={941}
             height={1672}
