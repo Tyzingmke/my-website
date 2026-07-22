@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PageTransition } from "@/components/PageTransition";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "swap" });
@@ -23,13 +24,14 @@ export const metadata: Metadata = {
   authors: [{ name: profile.name }],
   creator: profile.name,
   category: "Web design and development",
+  referrer: "strict-origin-when-cross-origin",
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     title: `${profile.name} | Website Designer & Developer`,
     description: profile.summary,
     siteName: profile.brand,
-    images: [{ url: `${basePath}/images/antony-studio.png`, width: 941, height: 1672, alt: profile.name }],
+    images: [{ url: `${basePath}/images/antony-studio.webp`, width: 941, height: 1672, alt: profile.name }],
   },
 };
 
@@ -61,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main id="main-content">{children}</main>
         <Footer />
+        <CookieConsent />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </body>
     </html>

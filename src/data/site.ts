@@ -2,19 +2,21 @@ export const profile = {
   name: "Antony Njoroge Mburu",
   brand: "Antony DigitalWeb",
   role: "Website Designer & Static Web Systems Builder",
-  email: "hello@antonydigitalweb.com",
-  whatsapp: "254700000000",
+  email: "antonymburu379@gmail.com",
+  phone: "0759 238 918",
+  phoneHref: "+254759238918",
+  whatsapp: "254759238918",
   location: "Kenya",
   summary:
     "I build affordable, fast, mobile-friendly websites for local businesses, professionals, churches, catalogues and freelancers who need one credible link that works all day.",
 };
 
 export const nav = [
-  { href: "/", label: "Home" },
-  { href: "/work/", label: "Work" },
-  { href: "/services/", label: "Services" },
-  { href: "/about/", label: "About" },
-  { href: "/contact/", label: "Contact" },
+  { href: "/", label: "Home", shortLabel: "Home" },
+  { href: "/work/", label: "Work", shortLabel: "Work" },
+  { href: "/services/", label: "Services", shortLabel: "Build" },
+  { href: "/about/", label: "About", shortLabel: "About" },
+  { href: "/contact/", label: "Contact", shortLabel: "Talk" },
 ];
 
 export const stats = [

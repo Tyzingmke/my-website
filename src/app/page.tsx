@@ -28,6 +28,9 @@ export default function Home() {
           </svg>
         </div>
         <div className="intro-greeting" data-intro-greeting aria-hidden="true">
+          <div className="intro-honeycomb" data-intro-honeycomb>
+            {Array.from({ length: 42 }, (_, index) => <span className="intro-honeycomb-cell" data-intro-tile key={index} />)}
+          </div>
           <div className="intro-primary" data-intro-primary>
             <span className="intro-lead" data-intro-lead>
               <span className="intro-token intro-token-tight">Hi</span>
@@ -65,7 +68,7 @@ export default function Home() {
           <Image
             className="hero-image hero-image-soft"
             data-hero-image="soft"
-            src={assetPath("/images/antony-black-transparent.png")}
+            src={assetPath("/images/antony-logo-shirt.webp")}
             alt=""
             width={941}
             height={1672}
@@ -76,7 +79,7 @@ export default function Home() {
           <Image
             className="hero-image hero-image-sharp"
             data-hero-image="sharp"
-            src={assetPath("/images/antony-black-transparent.png")}
+            src={assetPath("/images/antony-logo-shirt.webp")}
             alt="Antony Njoroge Mburu"
             width={941}
             height={1672}
@@ -85,7 +88,7 @@ export default function Home() {
           />
           <Image
             className="hero-image hero-image-edge"
-            src={assetPath("/images/antony-black-transparent.png")}
+            src={assetPath("/images/antony-logo-shirt.webp")}
             alt=""
             width={941}
             height={1672}

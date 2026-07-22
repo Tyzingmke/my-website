@@ -65,6 +65,7 @@ export function PageTransition() {
       const left = leftRef.current;
       const right = rightRef.current;
       const loader = loaderRef.current;
+      const tiles = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-page-transition-tile]") ?? []);
       if (!overlay || !left || !right || !loader || matchMedia("(prefers-reduced-motion: reduce)").matches) {
         router.push(routeHref);
         return;
@@ -72,18 +73,20 @@ export function PageTransition() {
 
       transitionActive.current = true;
       lockPage();
-      gsap.killTweensOf([overlay, left, right, loader]);
+      gsap.killTweensOf([overlay, left, right, loader, ...tiles]);
       gsap.set(overlay, { autoAlpha: 1, pointerEvents: "auto" });
       gsap.set(left, { xPercent: -101 });
       gsap.set(right, { xPercent: 101 });
       gsap.set(loader, { autoAlpha: 0, scale: 0.74, rotation: 0 });
+      gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
 
       gsap.timeline({
         defaults: { ease: "power4.inOut" },
         onComplete: () => router.push(routeHref),
       })
-        .to([left, right], { xPercent: 0, duration: 0.52 }, 0)
-        .to(loader, { autoAlpha: 1, scale: 1, rotation: 270, duration: 0.64, ease: "power3.out" }, 0.18);
+        .to([left, right], { xPercent: 0, duration: 0.46 }, 0)
+        .to(tiles, { scaleY: 1, duration: 0.34, stagger: { each: 0.012, grid: [5, 6], from: "start" }, ease: "power3.inOut" }, 0.04)
+        .to(loader, { autoAlpha: 1, scale: 1, rotation: 270, duration: 0.58, ease: "power3.out" }, 0.2);
     };
 
     document.addEventListener("click", handleInternalLink, true);
@@ -98,6 +101,7 @@ export function PageTransition() {
     const left = leftRef.current;
     const right = rightRef.current;
     const loader = loaderRef.current;
+    const tiles = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-page-transition-tile]") ?? []);
     if (!overlay || !left || !right || !loader) return;
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -116,8 +120,9 @@ export function PageTransition() {
         },
       })
         .to(loader, { rotation: "+=210", duration: 0.48, ease: "power2.inOut" }, 0)
-        .to(left, { xPercent: -101, duration: 0.66 }, 0.18)
-        .to(right, { xPercent: 101, duration: 0.66 }, 0.18)
+        .to(tiles, { scaleY: 0, duration: 0.38, stagger: { each: 0.012, grid: [5, 6], from: "end" }, ease: "power3.inOut" }, 0.12)
+        .to(left, { xPercent: -101, duration: 0.58 }, 0.25)
+        .to(right, { xPercent: 101, duration: 0.58 }, 0.25)
         .to(loader, { autoAlpha: 0, scale: 0.82, duration: 0.28 }, 0.26);
     };
 
@@ -132,8 +137,10 @@ export function PageTransition() {
     gsap.set(left, { xPercent: -101 });
     gsap.set(right, { xPercent: 101 });
     gsap.set(loader, { autoAlpha: 1, scale: 0.82, rotation: 0 });
+    gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
     gsap.timeline({ defaults: { ease: "power4.inOut" }, onComplete: reveal })
       .to([left, right], { xPercent: 0, duration: 0.34 }, 0)
+      .to(tiles, { scaleY: 1, duration: 0.3, stagger: { each: 0.01, grid: [5, 6], from: "start" } }, 0.02)
       .to(loader, { rotation: 160, scale: 1, duration: 0.4 }, 0.08);
   }, [pathname]);
 
@@ -141,6 +148,9 @@ export function PageTransition() {
     <div className="page-transition" ref={overlayRef} aria-live="polite" aria-label="Loading page">
       <div className="page-transition-panel page-transition-left" ref={leftRef} />
       <div className="page-transition-panel page-transition-right" ref={rightRef} />
+      <div className="page-transition-tiles" aria-hidden="true">
+        {Array.from({ length: 30 }, (_, index) => <span data-page-transition-tile key={index} />)}
+      </div>
       <div className="page-transition-loader" ref={loaderRef} aria-hidden="true">
         <span>AM</span>
       </div>

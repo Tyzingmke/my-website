@@ -95,6 +95,7 @@ export function MotionProvider() {
       const introAlias = document.querySelector<HTMLElement>("[data-intro-alias]");
       const introAntony = document.querySelector<HTMLElement>("[data-intro-antony]");
       const heroName = document.querySelector<HTMLElement>("[data-hero-name]");
+      const introTiles = Array.from(document.querySelectorAll<HTMLElement>("[data-intro-tile]"));
       let introTokens: HTMLElement[] = [];
 
       if (intro && introPrimary && introLead && introTony && introAlias) {
@@ -128,6 +129,7 @@ export function MotionProvider() {
         gsap.set("[data-hero-image='soft']", { autoAlpha: 0.72, scale: 0.91, yPercent: 8 });
         gsap.set([introAlias, introAntony], { autoAlpha: 0 });
         gsap.set([...introTokens, introTony], { autoAlpha: 0 });
+        gsap.set(introTiles, { autoAlpha: 0, scale: 0.46, rotation: 0 });
 
         const tokenPatterns = [
           [{ x: 0, y: 28, rotation: 0 }, { x: 0, y: -18, rotation: 0 }, { x: 0, y: 24, rotation: 0 }],
@@ -141,6 +143,12 @@ export function MotionProvider() {
         introTimeline
           .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.32 })
           .fromTo(
+            introTiles,
+            { autoAlpha: 0, scale: 0.42, rotation: (index) => index % 2 ? -5 : 5 },
+            { autoAlpha: 0.42, scale: 1, rotation: 0, duration: 0.58, stagger: { each: 0.018, grid: [6, 7], from: "center" } },
+            0,
+          )
+          .fromTo(
             introTokens,
             {
               autoAlpha: 0,
@@ -152,6 +160,14 @@ export function MotionProvider() {
             { autoAlpha: 1, x: 0, y: 0, rotation: 0, filter: "blur(0px)", duration: 0.48, stagger: 0.11 },
             0.1,
           )
+          .to(introTiles, { autoAlpha: 0.08, scale: 1.08, duration: 0.48, stagger: { each: 0.01, grid: [6, 7], from: "edges" } }, 1.42)
+          .fromTo(
+            introTiles,
+            { autoAlpha: 0.06, scale: 0.82, xPercent: -18 },
+            { autoAlpha: 0.28, scale: 1, xPercent: 0, duration: 0.52, stagger: { each: 0.014, grid: [6, 7], from: "start" } },
+            2.28,
+          )
+          .to(introTiles, { autoAlpha: 0.04, xPercent: 14, duration: 0.7, stagger: { each: 0.012, grid: [6, 7], from: "end" } }, 3.72)
           .fromTo(introTony, { autoAlpha: 0, scale: 0.94, filter: "blur(9px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.52 }, tonyRevealAt)
           .to(introPrimary, { autoAlpha: 0, y: -24, scale: 0.96, duration: 0.38 }, 2.38)
           .fromTo(introAlias, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.42 }, 2.52)
@@ -163,6 +179,7 @@ export function MotionProvider() {
             4.78,
           )
           .to(intro, { backgroundColor: "rgba(215, 214, 207, 0)", backdropFilter: "blur(0px)", duration: 1.1 }, 4.72)
+          .to(introTiles, { autoAlpha: 0, scale: 1.2, duration: 0.62, stagger: { each: 0.008, grid: [6, 7], from: "center" } }, 4.76)
           .to(introAntony, { x: shiftX, y: shiftY, scale, duration: 1.14, ease: "power4.inOut" }, 5.34)
           .to(introAntony, { autoAlpha: 0, duration: 0.14 }, 6.38)
           .set(heroName, { autoAlpha: 1 }, 6.42)
@@ -445,7 +462,7 @@ export function MotionProvider() {
             const clone = item.cloneNode(true) as HTMLElement;
             clone.removeAttribute("data-dock-transfer");
             clone.setAttribute("tabindex", "-1");
-            clone.querySelector<HTMLElement>("span")?.remove();
+            clone.querySelectorAll<HTMLElement>("span").forEach((label) => label.remove());
             Object.assign(clone.style, {
               position: "absolute",
               left: `${source.left}px`,
@@ -664,7 +681,7 @@ export function MotionProvider() {
           });
           gsap.set(dockActionItems, { autoAlpha: 0 });
 
-          const railHeight = () => Math.min(310, window.innerHeight - 168);
+          const railHeight = () => Math.min(360, window.innerHeight - 150);
           const railTop = () => Math.max(84, (window.innerHeight - railHeight()) / 2);
 
           const mobileDock = gsap.timeline({
@@ -684,8 +701,8 @@ export function MotionProvider() {
           mobileDock
             .to(siteHeader, {
               top: railTop,
-              left: () => window.innerWidth - 68,
-              width: 58,
+              left: () => window.innerWidth - 88,
+              width: 78,
               height: railHeight,
               ease: "none",
               duration: 1,
@@ -712,7 +729,7 @@ export function MotionProvider() {
           const mobileBrandLayer = mobileBrand && headerTransferItems[0]
             ? addHeaderTransfer(
               mobileDock,
-              () => ({ left: window.innerWidth - 62, top: railTop() + 5, width: 50, height: 46, backgroundColor: "#e8ff1e" }),
+              () => ({ left: window.innerWidth - 82, top: railTop() + 5, width: 70, height: 46, backgroundColor: "#e8ff1e" }),
               [headerTransferItems[0]],
               [mobileBrand],
             )
@@ -723,9 +740,9 @@ export function MotionProvider() {
               const navHeight = railHeight() - 106;
               const rowHeight = (navHeight - 16) / 5;
               return {
-                left: window.innerWidth - 62,
+                left: window.innerWidth - 82,
                 top: navTop + index * (rowHeight + 4),
-                width: 50,
+                width: 70,
                 height: rowHeight,
                 backgroundColor: mobileItems[index]?.classList.contains("is-active") ? "#e8ff1e" : "rgba(220, 220, 214, 0.9)",
               };
@@ -733,9 +750,9 @@ export function MotionProvider() {
             : null;
 
           const transferLayer = addActionTransfer(mobileDock, (index) => ({
-            centerX: window.innerWidth - 50 + index * 27,
+            centerX: window.innerWidth - 67 + index * 36,
             centerY: railTop() + railHeight() - 27,
-            width: 24,
+            width: 33,
           }));
           if (!transferLayer) {
             mobileDock.to(dockActionItems, { autoAlpha: 1, duration: 0.18, stagger: 0.02, ease: "none" }, 0.78);
@@ -769,6 +786,46 @@ export function MotionProvider() {
           },
         );
       });
+
+      const aboutPortrait = document.querySelector<HTMLElement>("[data-about-portrait]");
+      if (aboutPortrait && !reduced) {
+        gsap.fromTo(
+          aboutPortrait,
+          { yPercent: 4, rotation: -0.7 },
+          {
+            yPercent: -5,
+            rotation: 0.7,
+            ease: "none",
+            scrollTrigger: {
+              trigger: ".about-hero",
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.65,
+            },
+          },
+        );
+      }
+
+      const journeyPortrait = document.querySelector<HTMLElement>("[data-journey-portrait]");
+      if (journeyPortrait && !reduced) {
+        gsap.fromTo(
+          journeyPortrait,
+          { y: 0, xPercent: -50, rotation: -1.2 },
+          {
+            y: () => Math.max((document.querySelector<HTMLElement>("[data-journey-map]")?.offsetHeight ?? 2400) * 0.53, 620),
+            xPercent: -50,
+            rotation: 1.2,
+            ease: "none",
+            scrollTrigger: {
+              trigger: "[data-journey-map]",
+              start: "top 74%",
+              end: "bottom 30%",
+              scrub: 0.8,
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+      }
 
       const journeyPath = document.querySelector<SVGPathElement>("[data-journey-path]");
       if (journeyPath && !reduced) {

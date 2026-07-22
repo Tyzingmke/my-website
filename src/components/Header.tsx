@@ -60,7 +60,13 @@ export function Header() {
             {nav.map((item) => {
               const Icon = dockIcons[item.href as keyof typeof dockIcons];
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href.replace(/\/$/, ""));
-              return <Link className={active ? "is-active" : ""} data-dock-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>{Icon ? <Icon size={16} /> : null}<span>{item.label}</span></Link>;
+              return (
+                <Link className={active ? "is-active" : ""} data-dock-transfer={item.href} href={item.href} key={item.href} onClick={() => setOpen(false)}>
+                  {Icon ? <Icon size={16} /> : null}
+                  <span className="dock-label-full">{item.label}</span>
+                  <span className="dock-label-short">{item.shortLabel}</span>
+                </Link>
+              );
             })}
           </nav>
           <div className="dock-tools" aria-label="Working tools">
