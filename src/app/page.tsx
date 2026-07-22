@@ -28,9 +28,6 @@ export default function Home() {
           </svg>
         </div>
         <div className="intro-greeting" data-intro-greeting aria-hidden="true">
-          <div className="intro-honeycomb" data-intro-honeycomb>
-            {Array.from({ length: 42 }, (_, index) => <span className="intro-honeycomb-cell" data-intro-tile key={index} />)}
-          </div>
           <div className="intro-primary" data-intro-primary>
             <span className="intro-lead" data-intro-lead>
               <span className="intro-token intro-token-tight">Hi</span>
@@ -129,25 +126,27 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-work section-band section-dark" id="work">
-        <div className="section-shell">
-          <div className="section-heading section-heading-split" data-reveal>
-            <div><p className="eyebrow">02 / Selected work</p><h2>Useful systems,<br />clearly presented.</h2></div>
-            <div><p>Concepts and practical builds shaped around a clear audience, a focused action and straightforward maintenance.</p><Link className="text-link light-link" href="/work/">View all projects <ArrowUpRight size={17} /></Link></div>
-          </div>
-          <div className="featured-grid">
-            {projects.slice(0, 3).map((project, index) => (
-              <article className={`featured-project project-tone-${index + 1}`} data-reveal key={project.name}>
-                <div className="project-preview" aria-hidden="true">
-                  <span className="preview-bar" />
-                  <span className="preview-panel preview-panel-main" />
-                  <span className="preview-panel preview-panel-side" />
-                  <b>{project.year}</b>
-                </div>
-                <div className="project-card-copy"><span>{project.type}</span><h3>{project.name}</h3><p>{project.copy}</p></div>
-                <Link href="/work/" aria-label={`Read more about ${project.name}`}>Read more <ArrowUpRight size={16} /></Link>
-              </article>
-            ))}
+      <section className="home-work section-band section-dark" id="work" data-home-project-rail>
+        <div className="home-work-pin" data-home-project-pin>
+          <div className="section-shell">
+            <div className="section-heading section-heading-split" data-reveal>
+              <div><p className="eyebrow">02 / Selected work</p><h2>Useful systems,<br />clearly presented.</h2></div>
+              <div><p>Concepts and practical builds shaped around a clear audience, a focused action and straightforward maintenance.</p><Link className="text-link light-link" href="/work/">View all projects <ArrowUpRight size={17} /></Link></div>
+            </div>
+            <div className="featured-grid" data-home-project-track>
+              {projects.slice(0, 3).map((project, index) => (
+                <article className={`featured-project project-tone-${index + 1}`} data-reveal key={project.name}>
+                  <div className="project-preview" aria-hidden="true">
+                    <span className="preview-bar" />
+                    <span className="preview-panel preview-panel-main" />
+                    <span className="preview-panel preview-panel-side" />
+                    <b>{project.year}</b>
+                  </div>
+                  <div className="project-card-copy"><span>{project.type}</span><h3>{project.name}</h3><p>{project.copy}</p></div>
+                  <Link href="/work/" aria-label={`Read more about ${project.name}`}>Read more <ArrowUpRight size={16} /></Link>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -168,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-promise section-band section-cobalt" data-promise-reveal>
+      <section className="home-promise section-band section-dark" data-promise-reveal>
         <div className="promise-pixel-scene" aria-hidden="true">
           <div className="promise-pixel-identity" data-promise-identity>
             <strong data-promise-name>ANTONY</strong>

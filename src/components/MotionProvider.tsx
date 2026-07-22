@@ -219,9 +219,11 @@ export function MotionProvider() {
           });
         }
       } else {
-        gsap.set("[data-intro-greeting]", { display: "none" });
-        gsap.set("[data-hero-image='soft']", { display: "none" });
-        gsap.set("[data-hero-image='sharp'], [data-hero-content], [data-hero-card], .site-header", { autoAlpha: 1 });
+        const softHero = document.querySelector<HTMLElement>("[data-hero-image='soft']");
+        const visibleTargets = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-image='sharp'], [data-hero-content], [data-hero-card], .site-header"));
+        if (intro) gsap.set(intro, { display: "none" });
+        if (softHero) gsap.set(softHero, { display: "none" });
+        if (visibleTargets.length) gsap.set(visibleTargets, { autoAlpha: 1 });
         window.clearTimeout(introUnlockTimer);
         completeHomeIntro();
       }
@@ -887,6 +889,28 @@ export function MotionProvider() {
             scrub: 0.42,
             invalidateOnRefresh: true,
             anticipatePin: 1,
+          },
+        });
+        return () => tween.kill();
+      });
+
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        const track = document.querySelector<HTMLElement>("[data-home-project-track]");
+        const section = document.querySelector<HTMLElement>("[data-home-project-rail]");
+        if (!track || !section) return;
+        const distance = () => {
+          const edgeClearance = innerWidth <= 960 ? 100 : innerWidth * 0.08;
+          return Math.max(track.scrollWidth - innerWidth + edgeClearance, 0);
+        };
+        const tween = gsap.to(track, {
+          x: () => -distance(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 0.5,
+            invalidateOnRefresh: true,
           },
         });
         return () => tween.kill();

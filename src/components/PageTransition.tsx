@@ -24,6 +24,7 @@ export function PageTransition() {
   const quoteRef = useRef<HTMLParagraphElement>(null);
   const previousPath = useRef(pathname);
   const transitionActive = useRef(false);
+  const transitionFrame = useRef(0);
   const previousOverflow = useRef("");
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -72,44 +73,56 @@ export function PageTransition() {
       event.preventDefault();
       event.stopPropagation();
 
-      const overlay = overlayRef.current;
-      const left = leftRef.current;
-      const right = rightRef.current;
-      const loader = loaderRef.current;
-      const quote = quoteRef.current;
-      const tiles = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-page-transition-tile]") ?? [])
-        .filter((tile) => getComputedStyle(tile).display !== "none");
-      const trails = tiles.flatMap((tile) => Array.from(tile.querySelectorAll<HTMLElement>("[data-page-transition-trail]")));
-      if (!overlay || !left || !right || !loader || !quote || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
         router.push(routeHref);
         return;
       }
 
-      quote.textContent = quoteForPath(routePathname || "/");
       transitionActive.current = true;
-      lockPage();
-      gsap.killTweensOf([overlay, left, right, loader, quote, ...tiles, ...trails]);
-      gsap.set(overlay, { autoAlpha: 1, pointerEvents: "auto" });
-      gsap.set(left, { xPercent: -101 });
-      gsap.set(right, { xPercent: 101 });
-      gsap.set(loader, { autoAlpha: 0, scale: 0.74, rotation: 0 });
-      gsap.set(quote, { autoAlpha: 0, y: 14 });
-      gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
-      gsap.set(trails, { autoAlpha: 0, yPercent: -180 });
+      transitionFrame.current = requestAnimationFrame(() => {
+        transitionFrame.current = 0;
+        const overlay = overlayRef.current;
+        const left = leftRef.current;
+        const right = rightRef.current;
+        const loader = loaderRef.current;
+        const quote = quoteRef.current;
+        const tiles = Array.from(overlay?.querySelectorAll<HTMLElement>("[data-page-transition-tile]") ?? [])
+          .filter((tile) => getComputedStyle(tile).display !== "none");
+        const trails = tiles.flatMap((tile) => Array.from(tile.querySelectorAll<HTMLElement>("[data-page-transition-trail]")));
+        if (!overlay || !left || !right || !loader || !quote) {
+          transitionActive.current = false;
+          router.push(routeHref);
+          return;
+        }
 
-      gsap.timeline({
-        defaults: { ease: "power4.inOut" },
-        onComplete: () => router.push(routeHref),
-      })
-        .to([left, right], { xPercent: 0, duration: 0.46 }, 0)
-        .to(tiles, { scaleY: 1, duration: 0.4, stagger: { each: 0.016, from: "start" }, ease: "power3.inOut" }, 0.03)
-        .to(trails, { autoAlpha: 0.9, yPercent: 520, duration: 0.54, stagger: { each: 0.014, from: "start" }, ease: "power2.inOut" }, 0.08)
-        .to(loader, { autoAlpha: 1, scale: 1, rotation: 270, duration: 0.58, ease: "power3.out" }, 0.2)
-        .to(quote, { autoAlpha: 1, y: 0, duration: 0.34, ease: "power2.out" }, 0.27);
+        quote.textContent = quoteForPath(routePathname || "/");
+        lockPage();
+        gsap.killTweensOf([overlay, left, right, loader, quote, ...tiles, ...trails]);
+        gsap.set(overlay, { autoAlpha: 1, pointerEvents: "auto" });
+        gsap.set(left, { xPercent: -101 });
+        gsap.set(right, { xPercent: 101 });
+        gsap.set(loader, { autoAlpha: 0, scale: 0.74, rotation: 0 });
+        gsap.set(quote, { autoAlpha: 0, y: 14 });
+        gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
+        gsap.set(trails, { autoAlpha: 0, yPercent: -180 });
+
+        gsap.timeline({
+          defaults: { ease: "power4.inOut" },
+          onComplete: () => router.push(routeHref),
+        })
+          .to([left, right], { xPercent: 0, duration: 0.46 }, 0)
+          .to(tiles, { scaleY: 1, duration: 0.4, stagger: { each: 0.016, from: "start" }, ease: "power3.inOut" }, 0.03)
+          .to(trails, { autoAlpha: 0.9, yPercent: 520, duration: 0.54, stagger: { each: 0.014, from: "start" }, ease: "power2.inOut" }, 0.08)
+          .to(loader, { autoAlpha: 1, scale: 1, rotation: 270, duration: 0.58, ease: "power3.out" }, 0.2)
+          .to(quote, { autoAlpha: 1, y: 0, duration: 0.34, ease: "power2.out" }, 0.27);
+      });
     };
 
     document.addEventListener("click", handleInternalLink, true);
-    return () => document.removeEventListener("click", handleInternalLink, true);
+    return () => {
+      document.removeEventListener("click", handleInternalLink, true);
+      if (transitionFrame.current) cancelAnimationFrame(transitionFrame.current);
+    };
   }, [router]);
 
   useLayoutEffect(() => {
