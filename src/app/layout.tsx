@@ -39,7 +39,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#11130f",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4ecd6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1d1e2c" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -53,7 +56,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" data-motion="pending">
+    <html lang="en" data-motion="pending" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var stored=localStorage.getItem("antony-theme");var theme=stored==="dark"||stored==="light"?stored:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${sora.variable}`}>
         <noscript>
           <style>{`.intro-greeting,[data-hero-image="soft"]{display:none!important}.site-header-home{opacity:1!important;visibility:visible!important}`}</style>

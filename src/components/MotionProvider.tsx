@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  detectPerformanceProfile,
+  startAdaptivePerformanceMonitor,
+  type PerformanceTier,
+} from "@/lib/performanceProfile";
 import { isReloadNavigation, readStoredScroll } from "@/lib/scrollMemory";
 
 export function MotionProvider() {
@@ -21,22 +26,33 @@ export function MotionProvider() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const desktop = matchMedia("(min-width: 961px) and (pointer: fine)").matches;
     const mobileMotion = matchMedia("(max-width: 900px)").matches;
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
-    const cores = navigator.hardwareConcurrency ?? 4;
-    const connection = (navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    }).connection;
-    const liteMotion = !reduced && (
-      memory <= 2
-      || cores <= 2
-      || connection?.saveData === true
-      || connection?.effectiveType === "2g"
-      || connection?.effectiveType === "slow-2g"
-    );
-    const lightweightMotion = mobileMotion || liteMotion;
-    const richMotion = !reduced && !liteMotion && desktop && memory >= 4;
     const root = document.documentElement;
+    const performanceProfile = detectPerformanceProfile(mobileMotion);
+    const memory = performanceProfile.signals.memory ?? 4;
+    const liteMotion = !reduced && (
+      performanceProfile.tier === "low" || performanceProfile.tier === "legacy"
+    );
+    const lightweightMotion = mobileMotion || performanceProfile.tier !== "high";
+    const richMotion = !reduced
+      && performanceProfile.tier === "high"
+      && desktop
+      && memory >= 4;
+    const applyPerformanceTier = (tier: PerformanceTier) => {
+      root.dataset.performance = reduced ? "reduced" : tier;
+      if (!reduced && (tier === "low" || tier === "legacy")) root.dataset.motion = "lite";
+    };
+    root.dataset.performance = reduced ? "reduced" : performanceProfile.tier;
+    root.dataset.performanceSource = performanceProfile.source;
     root.dataset.motion = reduced ? "reduced" : liteMotion ? "lite" : richMotion ? "rich" : "standard";
+    const stopPerformanceMonitor = reduced || performanceProfile.locked
+      ? null
+      : startAdaptivePerformanceMonitor({
+        initialTier: performanceProfile.tier,
+        onTierChange: (tier, reason) => {
+          applyPerformanceTier(tier);
+          root.dataset.performanceSource = reason;
+        },
+      });
     const initialRun = initialEffect.current;
     initialEffect.current = false;
     const reloadScrollY = initialRun && isReloadNavigation() ? Math.max(readStoredScroll(pathname), window.scrollY) : 0;
@@ -83,6 +99,7 @@ export function MotionProvider() {
     const completeHomeIntro = () => {
       if (root.dataset.homeIntro === "ready") return;
       releaseIntroTouchLock();
+      stopPerformanceMonitor?.();
       document.body.style.overflow = previousBodyOverflow;
       root.dataset.homeIntro = "ready";
       lenis?.start();
@@ -216,6 +233,9 @@ export function MotionProvider() {
         const timings = lightweightMotion
           ? { primaryOut: 1.55, aliasIn: 1.66, aliasOut: 2.72, antonyIn: 2.64, curtain: 2.6, nameMove: 3.12, nameHide: 3.78, nameSwap: 3.82, introHide: 3.92, image: 2.68, content: 3.5, cards: 3.56, header: 3.36 }
           : { primaryOut: 2.38, aliasIn: 2.52, aliasOut: 4.86, antonyIn: 4.78, curtain: 4.72, nameMove: 5.34, nameHide: 6.38, nameSwap: 6.42, introHide: 6.52, image: 4.82, content: 6.16, cards: 6.24, header: 5.92 };
+        const transparentIntro = root.dataset.theme === "dark"
+          ? "rgba(36, 35, 49, 0)"
+          : "rgba(167, 202, 177, 0)";
         const introTimeline = gsap.timeline({ defaults: { ease: "power3.out" } });
         introTimeline
           .fromTo(intro, { autoAlpha: 0 }, { autoAlpha: 1, duration: lightweightMotion ? 0.2 : 0.32 })
@@ -241,7 +261,7 @@ export function MotionProvider() {
             { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: lightweightMotion ? 0.34 : 0.54 },
             timings.antonyIn,
           )
-          .to(intro, { backgroundColor: "rgba(215, 214, 207, 0)", backdropFilter: "blur(0px)", duration: lightweightMotion ? 0.72 : 1.1 }, timings.curtain)
+          .to(intro, { backgroundColor: transparentIntro, backdropFilter: "blur(0px)", duration: lightweightMotion ? 0.72 : 1.1 }, timings.curtain)
           .to(introAntony, { x: shiftX, y: shiftY, scale, duration: lightweightMotion ? 0.72 : 1.14, ease: "power4.inOut" }, timings.nameMove)
           .to(introAntony, { autoAlpha: 0, duration: 0.12 }, timings.nameHide)
           .set(heroName, { autoAlpha: 1 }, timings.nameSwap)
@@ -366,7 +386,7 @@ export function MotionProvider() {
         const dockActionItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-action]"));
         const headerTransferItems = Array.from(topbar.querySelectorAll<HTMLElement>("[data-header-transfer]"));
         const dockTransferItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-transfer]"));
-        const dockRevealItems = [".dock-intro", ".dock-tools", ".dock-email"]
+        const dockRevealItems = [".dock-intro", ".dock-tools", ".dock-email", "[data-dock-theme]"]
           .map((selector) => dock.querySelector<HTMLElement>(selector))
           .filter((item): item is HTMLElement => Boolean(item));
         const addActionTransfer = (
@@ -525,8 +545,8 @@ export function MotionProvider() {
               ease: "none",
               duration: 0.855,
             }, 0.045)
-            .to(transferItems, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
-            .to(brandText, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
+            .to(transferItems, { color: "#1d1e2c", duration: 0.15, ease: "none" }, 0.75)
+            .to(brandText, { color: "#1d1e2c", duration: 0.15, ease: "none" }, 0.75)
             .set(targetItems, { autoAlpha: 1 }, 0.9)
             .set(transferItems, { autoAlpha: 0 }, 0.905);
 
@@ -600,7 +620,7 @@ export function MotionProvider() {
               duration: 0.845,
               stagger: 0.006,
             }, 0.055)
-            .to(transferItems, { color: "#11130f", duration: 0.15, ease: "none" }, 0.75)
+            .to(transferItems, { color: "#1d1e2c", duration: 0.15, ease: "none" }, 0.75)
             .set(targetItems, { autoAlpha: 1 }, 0.9)
             .set(transferItems, { autoAlpha: 0 }, 0.905);
 
@@ -621,11 +641,11 @@ export function MotionProvider() {
         setDockState(false);
 
         const themes = [
-          { selector: ".home-hero", surface: "rgba(220, 220, 214, 0.84)" },
-          { selector: ".home-about", surface: "rgba(233, 236, 210, 0.86)" },
-          { selector: ".home-work", surface: "rgba(228, 228, 222, 0.88)" },
-          { selector: ".home-services", surface: "rgba(224, 228, 231, 0.87)" },
-          { selector: ".home-promise", surface: "rgba(220, 227, 232, 0.87)" },
+          { selector: ".home-hero", surface: "rgba(244, 236, 214, 0.86)" },
+          { selector: ".home-about", surface: "rgba(221, 202, 125, 0.88)" },
+          { selector: ".home-work", surface: "rgba(167, 202, 177, 0.88)" },
+          { selector: ".home-services", surface: "rgba(136, 183, 181, 0.88)" },
+          { selector: ".home-promise", surface: "rgba(184, 139, 74, 0.88)" },
         ];
         const applyTheme = (theme: (typeof themes)[number]) => {
           gsap.to(siteHeader, {
@@ -650,28 +670,26 @@ export function MotionProvider() {
         }
 
         dockMedia.add("(min-width: 901px)", () => {
-          if (liteMotion) {
-            const sourceHeader = siteHeader.getBoundingClientRect();
-            gsap.set(siteHeader, {
-              top: 14,
-              left: 14,
-              width: 238,
-              height: () => window.innerHeight - 28,
-            });
-            gsap.set(topbar, {
-              top: sourceHeader.top - 14,
-              left: sourceHeader.left - 14,
-              right: "auto",
-              bottom: "auto",
-              width: sourceHeader.width,
-              height: sourceHeader.height,
-            });
-          }
+          const sourceHeader = siteHeader.getBoundingClientRect();
+          gsap.set(siteHeader, {
+            top: 14,
+            left: 14,
+            width: 238,
+            height: () => window.innerHeight - 28,
+          });
+          gsap.set(topbar, {
+            top: sourceHeader.top - 14,
+            left: sourceHeader.left - 14,
+            right: "auto",
+            bottom: "auto",
+            width: sourceHeader.width,
+            height: sourceHeader.height,
+          });
           gsap.set(dock, {
             autoAlpha: 1,
             pointerEvents: "none",
             transformPerspective: 1000,
-            backgroundColor: "rgba(226, 226, 220, 0)",
+            backgroundColor: "rgba(244, 236, 214, 0)",
             borderColor: "rgba(255, 255, 255, 0)",
             boxShadow: "0 18px 46px rgba(17, 19, 15, 0)",
             backdropFilter: "none",
@@ -702,16 +720,6 @@ export function MotionProvider() {
             },
           });
 
-          if (!liteMotion) {
-            dockTimeline.to(siteHeader, {
-              top: 14,
-              left: 14,
-              width: 238,
-              height: () => window.innerHeight - 28,
-              ease: "none",
-              duration: 1,
-            }, 0);
-          }
           dockTimeline
             .to(topbar, {
               backgroundColor: "rgba(17, 19, 15, 0)",
@@ -721,7 +729,7 @@ export function MotionProvider() {
               duration: 0.28,
               ease: "none",
             }, 0.02)
-            .to(".header-contact", { backgroundColor: "rgba(232, 255, 30, 0)", borderColor: "rgba(255, 255, 255, 0)", duration: 0.24, ease: "none" }, 0.03)
+            .to(".header-contact", { backgroundColor: "rgba(221, 202, 125, 0)", borderColor: "rgba(255, 255, 255, 0)", duration: 0.24, ease: "none" }, 0.03)
             .to(".header-brand", { borderColor: "rgba(255, 255, 255, 0)", duration: 0.24, ease: "none" }, 0.03)
             .to(".header-contact", {
               autoAlpha: 0,
@@ -731,7 +739,7 @@ export function MotionProvider() {
             }, 0.22)
             .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
-              backgroundColor: liteMotion ? "rgba(226, 226, 220, 0.86)" : "rgba(226, 226, 220, 0.38)",
+              backgroundColor: liteMotion ? "rgba(244, 236, 214, 0.9)" : "rgba(244, 236, 214, 0.42)",
               borderColor: "rgba(255, 255, 255, 0.42)",
               boxShadow: liteMotion ? "0 10px 26px rgba(17, 19, 15, 0.1)" : "0 18px 46px rgba(17, 19, 15, 0.12)",
               backdropFilter: liteMotion ? "none" : "blur(16px) saturate(0.84)",
@@ -753,7 +761,7 @@ export function MotionProvider() {
 
           const headerTransferLayer = addHeaderTransfer(dockTimeline, (index) => {
             if (index === 0) {
-              return { left: 23, top: 23, width: 220, height: 54, backgroundColor: "#e8ff1e" };
+              return { left: 23, top: 23, width: 220, height: 54, backgroundColor: "#ddca7d" };
             }
             const target = dockTransferItems[index];
             return {
@@ -761,7 +769,7 @@ export function MotionProvider() {
               top: window.innerHeight / 2 - 116 + (index - 1) * 44,
               width: 220,
               height: 39,
-              backgroundColor: target?.classList.contains("is-active") ? "#e8ff1e" : "rgba(220, 220, 214, 0.9)",
+              backgroundColor: target?.classList.contains("is-active") ? "#ddca7d" : "rgba(244, 236, 214, 0.92)",
             };
           });
 
@@ -791,7 +799,7 @@ export function MotionProvider() {
             autoAlpha: 1,
             pointerEvents: "none",
             transformPerspective: 900,
-            backgroundColor: "rgba(226, 226, 220, 0)",
+            backgroundColor: "rgba(244, 236, 214, 0)",
             borderColor: "rgba(255, 255, 255, 0)",
             boxShadow: "0 14px 36px rgba(17, 19, 15, 0)",
             backdropFilter: "none",
@@ -844,7 +852,7 @@ export function MotionProvider() {
             .to(".header-brand", { borderColor: "rgba(255, 255, 255, 0)", duration: 0.22, ease: "none" }, 0.03)
             .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
-              backgroundColor: "rgba(226, 226, 220, 0.86)",
+              backgroundColor: "rgba(244, 236, 214, 0.9)",
               borderColor: "rgba(255, 255, 255, 0.46)",
               boxShadow: "0 14px 36px rgba(17, 19, 15, 0.14)",
               backdropFilter: "none",
@@ -855,7 +863,7 @@ export function MotionProvider() {
           const mobileBrandLayer = mobileBrand && headerTransferItems[0]
             ? addHeaderTransfer(
               mobileDock,
-              () => ({ left: window.innerWidth - 82, top: railTop() + 5, width: 70, height: 46, backgroundColor: "#e8ff1e" }),
+              () => ({ left: window.innerWidth - 82, top: railTop() + 5, width: 70, height: 46, backgroundColor: "#ddca7d" }),
               [headerTransferItems[0]],
               [mobileBrand],
             )
@@ -870,7 +878,7 @@ export function MotionProvider() {
                 top: navTop + index * (rowHeight + 4),
                 width: 70,
                 height: rowHeight,
-                backgroundColor: mobileItems[index]?.classList.contains("is-active") ? "#e8ff1e" : "rgba(220, 220, 214, 0.9)",
+                backgroundColor: mobileItems[index]?.classList.contains("is-active") ? "#ddca7d" : "rgba(244, 236, 214, 0.92)",
               };
             })
             : null;
@@ -923,8 +931,8 @@ export function MotionProvider() {
           gsap.to(topbar, { autoAlpha: 0, duration: 0.1, ease: "none" });
           gsap.fromTo(
             dock,
-            { autoAlpha: 0, backgroundColor: "rgba(226, 226, 220, 0)" },
-            { autoAlpha: 1, backgroundColor: "rgba(226, 226, 220, 0.9)", duration: 0.2, delay: 0.08, ease: "none" },
+            { autoAlpha: 0, backgroundColor: "rgba(244, 236, 214, 0)" },
+            { autoAlpha: 1, backgroundColor: "rgba(244, 236, 214, 0.92)", duration: 0.2, delay: 0.08, ease: "none" },
           );
         };
         const showTopbar = () => {
@@ -1251,6 +1259,7 @@ export function MotionProvider() {
       window.clearTimeout(markRouteTimer);
       window.clearTimeout(introUnlockTimer);
       releaseIntroTouchLock();
+      stopPerformanceMonitor?.();
       if (restoreFrame) cancelAnimationFrame(restoreFrame);
       if (restoringReload) history.scrollRestoration = previousScrollRestoration;
       removeHeroPointer?.();

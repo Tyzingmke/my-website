@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, BriefcaseBusiness, CalendarDays, Handshake, House, Layers3, Mail, Menu, UserRound, X } from "lucide-react";
+import { ArrowUpRight, BriefcaseBusiness, CalendarDays, Handshake, House, Layers3, Mail, Menu, Moon, Sun, UserRound, X } from "lucide-react";
 import { nav, profile } from "@/data/site";
 
 const dockIcons = {
@@ -22,6 +22,22 @@ export function Header() {
   const closeTimer = useRef<number | null>(null);
   const topbarRef = useRef<HTMLDivElement>(null);
   const home = pathname === "/";
+
+  const applyTheme = useCallback((nextTheme: "light" | "dark", persist = true) => {
+    const root = document.documentElement;
+    root.dataset.theme = nextTheme;
+    root.style.colorScheme = nextTheme;
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      ?.setAttribute("content", nextTheme === "dark" ? "#1d1e2c" : "#f4ecd6");
+    if (persist) {
+      try {
+        localStorage.setItem("antony-theme", nextTheme);
+      } catch {
+        // The active theme still works when browser storage is unavailable.
+      }
+    }
+    window.dispatchEvent(new CustomEvent("site-theme-change", { detail: { theme: nextTheme } }));
+  }, []);
 
   const closeMenu = useCallback((animate = false) => {
     if (animate && closingRef.current) return;
@@ -52,6 +68,37 @@ export function Header() {
       if (closeTimer.current) window.clearTimeout(closeTimer.current);
     };
   }, [closeMenu]);
+
+  useEffect(() => {
+    const preference = matchMedia("(prefers-color-scheme: dark)");
+    const onPreferenceChange = (event: MediaQueryListEvent) => {
+      try {
+        if (localStorage.getItem("antony-theme")) return;
+      } catch {
+        // Follow the system preference if storage cannot be read.
+      }
+      applyTheme(event.matches ? "dark" : "light", false);
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "antony-theme" && (event.newValue === "light" || event.newValue === "dark")) {
+        applyTheme(event.newValue, false);
+      }
+    };
+    if (typeof preference.addEventListener === "function") {
+      preference.addEventListener("change", onPreferenceChange);
+    } else {
+      preference.addListener(onPreferenceChange);
+    }
+    window.addEventListener("storage", onStorage);
+    return () => {
+      if (typeof preference.removeEventListener === "function") {
+        preference.removeEventListener("change", onPreferenceChange);
+      } else {
+        preference.removeListener(onPreferenceChange);
+      }
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [applyTheme]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,12 +155,32 @@ export function Header() {
     setOpen(true);
   };
 
+  const toggleTheme = () => applyTheme(
+    document.documentElement.dataset.theme === "dark" ? "light" : "dark",
+  );
+
+  const themeButton = (placement: "top" | "dock") => (
+    <button
+      className={`theme-toggle theme-toggle-${placement}`}
+      data-dock-theme={placement === "dock" ? "" : undefined}
+      type="button"
+      aria-label="Toggle color theme"
+      title="Toggle color theme"
+      onClick={toggleTheme}
+    >
+      <Sun className="theme-icon theme-icon-sun" size={16} aria-hidden="true" />
+      <Moon className="theme-icon theme-icon-moon" size={16} aria-hidden="true" />
+    </button>
+  );
+
   return (
     <header className={home ? "site-header site-header-home" : "site-header"} data-site-header data-home-header={home ? "" : undefined}>
       <div className="topbar-shell" data-header-top ref={topbarRef}>
         <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => closeMenu()}>
           <strong>ANTONY</strong><span>MBURU</span>
         </Link>
+
+        {themeButton("top")}
 
         <button className="menu-toggle" data-menu-toggle type="button" aria-expanded={open} aria-controls="site-menu" onClick={toggleMenu}>
           {open ? <X size={20} /> : <Menu size={20} />}
@@ -136,6 +203,7 @@ export function Header() {
           <Link className="dock-brand" data-dock-transfer="brand" href="/" aria-label="Antony Mburu home">
             <strong>ANTONY</strong><span>MBURU</span>
           </Link>
+          {themeButton("dock")}
           <p className="dock-intro">Website design and practical static web systems for businesses ready to look credible online.</p>
           <nav className="dock-nav" aria-label="Side navigation">
             {nav.map((item) => {
