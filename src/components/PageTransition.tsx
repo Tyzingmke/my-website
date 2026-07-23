@@ -86,7 +86,6 @@ export function PageTransition() {
         const trails = tiles.flatMap((tile) => Array.from(tile.querySelectorAll<HTMLElement>("[data-page-transition-trail]")));
         const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
         const mobile = matchMedia("(max-width: 900px)").matches;
-        const lite = document.documentElement.dataset.motion === "lite";
         if (!overlay || !left || !right || !loader || !quote) {
           transitionActive.current = false;
           router.push(routeHref);
@@ -113,7 +112,7 @@ export function PageTransition() {
           return;
         }
 
-        if (mobile || lite) {
+        if (mobile) {
           gsap.set([left, right], { xPercent: 0 });
           gsap.timeline({
             defaults: { ease: "power3.inOut" },
@@ -162,7 +161,6 @@ export function PageTransition() {
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const mobile = matchMedia("(max-width: 900px)").matches;
-    const lite = document.documentElement.dataset.motion === "lite";
     if (reduced) {
       if (!transitionActive.current) {
         gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
@@ -184,7 +182,7 @@ export function PageTransition() {
     }
 
     const reveal = () => {
-      if (mobile || lite) {
+      if (mobile) {
         gsap.timeline({
           defaults: { ease: "power3.inOut" },
           onComplete: () => {
@@ -227,7 +225,7 @@ export function PageTransition() {
     gsap.set(quote, { autoAlpha: 0, y: 14 });
     gsap.set(tiles, { scaleY: 0, transformOrigin: (index) => index % 2 ? "center bottom" : "center top" });
     gsap.set(trails, { autoAlpha: 0, yPercent: -180 });
-    if (mobile || lite) {
+    if (mobile) {
       gsap.set([left, right], { xPercent: 0 });
       gsap.timeline({ defaults: { ease: "power3.inOut" }, onComplete: reveal })
         .to(tiles, { scaleY: 1, duration: 0.24, stagger: { each: 0.006, from: "start" } }, 0)

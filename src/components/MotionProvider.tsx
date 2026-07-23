@@ -16,6 +16,7 @@ export function MotionProvider() {
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true, limitCallbacks: true });
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const desktop = matchMedia("(min-width: 961px) and (pointer: fine)").matches;
@@ -70,10 +71,18 @@ export function MotionProvider() {
     let introUnlockTimer = 0;
     let restoreFrame = 0;
     let removeHeroPointer: (() => void) | null = null;
+    let introTouchLocked = false;
     const previousScrollRestoration = history.scrollRestoration;
     const previousBodyOverflow = playHomeIntro ? "" : document.body.style.overflow;
+    const preventIntroTouchScroll = (event: TouchEvent) => event.preventDefault();
+    const releaseIntroTouchLock = () => {
+      if (!introTouchLocked) return;
+      document.removeEventListener("touchmove", preventIntroTouchScroll);
+      introTouchLocked = false;
+    };
     const completeHomeIntro = () => {
       if (root.dataset.homeIntro === "ready") return;
+      releaseIntroTouchLock();
       document.body.style.overflow = previousBodyOverflow;
       root.dataset.homeIntro = "ready";
       lenis?.start();
@@ -83,6 +92,10 @@ export function MotionProvider() {
     if (playHomeIntro) {
       window.scrollTo(0, 0);
       document.body.style.overflow = "hidden";
+      if (mobileMotion) {
+        document.addEventListener("touchmove", preventIntroTouchScroll, { passive: false });
+        introTouchLocked = true;
+      }
       introUnlockTimer = window.setTimeout(completeHomeIntro, 9000);
     }
     markRouteTimer = window.setTimeout(() => {
@@ -134,7 +147,7 @@ export function MotionProvider() {
 
       if (heroMapPath) {
         const mapLength = heroMapPath.getTotalLength();
-        if (reduced || liteMotion) {
+        if (reduced) {
           gsap.set(heroMapPath, {
             strokeDasharray: `${mapLength} ${mapLength}`,
             strokeDashoffset: mapLength,
@@ -243,7 +256,7 @@ export function MotionProvider() {
             completeHomeIntro();
           });
 
-        if (richMotion) {
+        if (!reduced) {
           gsap.fromTo(
             "[data-hero-name]",
             { yPercent: 0, autoAlpha: 1 },
@@ -258,7 +271,7 @@ export function MotionProvider() {
           gsap.to("[data-hero-portrait]", {
             autoAlpha: 0.08,
             scale: 0.985,
-            filter: "blur(11px)",
+            filter: richMotion ? "blur(11px)" : "blur(0px)",
             ease: "none",
             scrollTrigger: { trigger: hero, start: "top top", end: "bottom 42%", scrub: true },
           });
@@ -292,33 +305,35 @@ export function MotionProvider() {
         completeHomeIntro();
       }
 
-      if (hero && richMotion) {
+      if (hero && desktop && !reduced) {
         const portrait = document.querySelector<HTMLElement>("[data-hero-portrait]");
         const ambient = document.querySelector<HTMLElement>("[data-hero-ambient]");
         const cards = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-card]"));
         if (portrait) {
+          const motionScale = liteMotion ? 0.58 : 1;
+          const responseDuration = liteMotion ? 0.46 : 0.8;
           gsap.set(portrait, { xPercent: -50 });
-          const portraitX = gsap.quickTo(portrait, "x", { duration: 0.8, ease: "power3.out" });
-          const portraitY = gsap.quickTo(portrait, "y", { duration: 0.8, ease: "power3.out" });
-          const ambientX = ambient ? gsap.quickTo(ambient, "x", { duration: 1.15, ease: "power3.out" }) : null;
-          const ambientY = ambient ? gsap.quickTo(ambient, "y", { duration: 1.15, ease: "power3.out" }) : null;
+          const portraitX = gsap.quickTo(portrait, "x", { duration: responseDuration, ease: "power3.out" });
+          const portraitY = gsap.quickTo(portrait, "y", { duration: responseDuration, ease: "power3.out" });
+          const ambientX = ambient ? gsap.quickTo(ambient, "x", { duration: liteMotion ? 0.62 : 1.15, ease: "power3.out" }) : null;
+          const ambientY = ambient ? gsap.quickTo(ambient, "y", { duration: liteMotion ? 0.62 : 1.15, ease: "power3.out" }) : null;
           const cardMotion = cards.map((card) => ({
             depth: Number(card.dataset.parallaxDepth ?? 1),
-            x: gsap.quickTo(card, "x", { duration: 0.72, ease: "power3.out" }),
-            y: gsap.quickTo(card, "y", { duration: 0.72, ease: "power3.out" }),
+            x: gsap.quickTo(card, "x", { duration: liteMotion ? 0.42 : 0.72, ease: "power3.out" }),
+            y: gsap.quickTo(card, "y", { duration: liteMotion ? 0.42 : 0.72, ease: "power3.out" }),
           }));
 
           const move = (event: PointerEvent) => {
             const bounds = hero.getBoundingClientRect();
             const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
             const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-            portraitX(x * 42);
-            portraitY(y * 13);
-            ambientX?.(x * -10);
-            ambientY?.(y * -7);
+            portraitX(x * 42 * motionScale);
+            portraitY(y * 13 * motionScale);
+            ambientX?.(x * -10 * motionScale);
+            ambientY?.(y * -7 * motionScale);
             cardMotion.forEach((motion) => {
-              motion.x(x * 8 * motion.depth);
-              motion.y(y * 6 * motion.depth);
+              motion.x(x * 8 * motion.depth * motionScale);
+              motion.y(y * 6 * motion.depth * motionScale);
             });
           };
           const reset = () => {
@@ -346,7 +361,7 @@ export function MotionProvider() {
       const dock = document.querySelector<HTMLElement>("[data-header-dock]");
       const dockTrigger = hero ?? document.querySelector<HTMLElement>("main");
       const dockMedia = gsap.matchMedia();
-      if (siteHeader && topbar && dock && dockTrigger && !reduced && !liteMotion) {
+      if (siteHeader && topbar && dock && dockTrigger && !reduced) {
         const heroActionItems = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-action]"));
         const dockActionItems = Array.from(dock.querySelectorAll<HTMLElement>("[data-dock-action]"));
         const headerTransferItems = Array.from(topbar.querySelectorAll<HTMLElement>("[data-header-transfer]"));
@@ -368,6 +383,7 @@ export function MotionProvider() {
             inset: "0",
             zIndex: "101",
             pointerEvents: "none",
+            contain: "strict",
           });
           document.body.append(layer);
 
@@ -386,7 +402,7 @@ export function MotionProvider() {
               margin: "0",
               whiteSpace: "nowrap",
               border: "1px solid rgba(17, 19, 15, 0.2)",
-              boxShadow: "0 12px 28px rgba(17, 19, 15, 0.14)",
+              boxShadow: liteMotion ? "none" : "0 12px 28px rgba(17, 19, 15, 0.14)",
               transformOrigin: "center center",
             });
             layer.append(clone);
@@ -448,6 +464,7 @@ export function MotionProvider() {
             inset: "0",
             zIndex: "102",
             pointerEvents: "none",
+            contain: "strict",
           });
           document.body.append(layer);
 
@@ -480,8 +497,9 @@ export function MotionProvider() {
               fontWeight: styles.fontWeight,
               lineHeight: styles.lineHeight,
               whiteSpace: "nowrap",
-              boxShadow: "0 8px 20px rgba(17, 19, 15, 0.12)",
-              willChange: "left, top, width, height, background-color",
+              boxShadow: liteMotion ? "none" : "0 8px 20px rgba(17, 19, 15, 0.12)",
+              transformOrigin: "top left",
+              willChange: "transform, background-color",
             });
             layer.append(clone);
             return clone;
@@ -497,13 +515,13 @@ export function MotionProvider() {
             .set(transferItems, { autoAlpha: 1 }, 0.04)
             .set(sourceItems, { autoAlpha: 0 }, 0.045)
             .to(transferItems, {
-              left: (index) => targetAt(index).left,
-              top: (index) => targetAt(index).top,
-              width: (index) => targetAt(index).width,
-              height: (index) => targetAt(index).height,
+              x: (index) => targetAt(index).left - sourceRects[index].left,
+              y: (index) => targetAt(index).top - sourceRects[index].top,
+              scaleX: (index) => targetAt(index).width / Math.max(sourceRects[index].width, 1),
+              scaleY: (index) => targetAt(index).height / Math.max(sourceRects[index].height, 1),
               backgroundColor: (index) => targetAt(index).backgroundColor,
               borderColor: "rgba(255, 255, 255, 0.52)",
-              boxShadow: "0 8px 22px rgba(17, 19, 15, 0.08)",
+              boxShadow: liteMotion ? "none" : "0 8px 22px rgba(17, 19, 15, 0.08)",
               ease: "none",
               duration: 0.855,
             }, 0.045)
@@ -525,7 +543,13 @@ export function MotionProvider() {
           const layer = document.createElement("div");
           layer.setAttribute("aria-hidden", "true");
           layer.dataset.mobileNavTransferLayer = "";
-          Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "102", pointerEvents: "none" });
+          Object.assign(layer.style, {
+            position: "fixed",
+            inset: "0",
+            zIndex: "102",
+            pointerEvents: "none",
+            contain: "strict",
+          });
           document.body.append(layer);
           const source = menuToggle.getBoundingClientRect();
           const transferItems = targetItems.map((item) => {
@@ -549,7 +573,7 @@ export function MotionProvider() {
               borderRadius: "3px",
               backgroundColor: "rgba(17, 19, 15, 0.98)",
               color: "#ffffff",
-              boxShadow: "0 8px 20px rgba(17, 19, 15, 0.12)",
+              boxShadow: liteMotion ? "none" : "0 8px 20px rgba(17, 19, 15, 0.12)",
               flexDirection: "column",
               gap: "2px",
               fontSize: "8px",
@@ -626,6 +650,23 @@ export function MotionProvider() {
         }
 
         dockMedia.add("(min-width: 901px)", () => {
+          if (liteMotion) {
+            const sourceHeader = siteHeader.getBoundingClientRect();
+            gsap.set(siteHeader, {
+              top: 14,
+              left: 14,
+              width: 238,
+              height: () => window.innerHeight - 28,
+            });
+            gsap.set(topbar, {
+              top: sourceHeader.top - 14,
+              left: sourceHeader.left - 14,
+              right: "auto",
+              bottom: "auto",
+              width: sourceHeader.width,
+              height: sourceHeader.height,
+            });
+          }
           gsap.set(dock, {
             autoAlpha: 1,
             pointerEvents: "none",
@@ -637,13 +678,13 @@ export function MotionProvider() {
           });
           gsap.set(dockRevealItems, {
             autoAlpha: 0,
-            x: (index) => 150 - index * 12,
-            y: (index) => -96 + index * 18,
-            scale: 0.56,
-            rotationY: -34,
-            rotationZ: (index) => index % 2 ? 5 : -5,
+            x: (index) => liteMotion ? 58 - index * 5 : 150 - index * 12,
+            y: (index) => liteMotion ? -30 + index * 7 : -96 + index * 18,
+            scale: liteMotion ? 0.84 : 0.56,
+            rotationY: liteMotion ? 0 : -34,
+            rotationZ: (index) => liteMotion ? (index % 2 ? 1.5 : -1.5) : (index % 2 ? 5 : -5),
             transformOrigin: "left center",
-            filter: "blur(7px)",
+            filter: liteMotion ? "blur(0px)" : "blur(7px)",
           });
           gsap.set(dockActionItems, { autoAlpha: 0 });
 
@@ -661,15 +702,17 @@ export function MotionProvider() {
             },
           });
 
-          dockTimeline
-            .to(siteHeader, {
+          if (!liteMotion) {
+            dockTimeline.to(siteHeader, {
               top: 14,
               left: 14,
               width: 238,
               height: () => window.innerHeight - 28,
               ease: "none",
               duration: 1,
-            }, 0)
+            }, 0);
+          }
+          dockTimeline
             .to(topbar, {
               backgroundColor: "rgba(17, 19, 15, 0)",
               borderColor: "rgba(255, 255, 255, 0)",
@@ -688,10 +731,10 @@ export function MotionProvider() {
             }, 0.22)
             .set(topbar, { autoAlpha: 0 }, 0.92)
             .to(dock, {
-              backgroundColor: "rgba(226, 226, 220, 0.38)",
+              backgroundColor: liteMotion ? "rgba(226, 226, 220, 0.86)" : "rgba(226, 226, 220, 0.38)",
               borderColor: "rgba(255, 255, 255, 0.42)",
-              boxShadow: "0 18px 46px rgba(17, 19, 15, 0.12)",
-              backdropFilter: "blur(16px) saturate(0.84)",
+              boxShadow: liteMotion ? "0 10px 26px rgba(17, 19, 15, 0.1)" : "0 18px 46px rgba(17, 19, 15, 0.12)",
+              backdropFilter: liteMotion ? "none" : "blur(16px) saturate(0.84)",
               duration: 0.24,
               ease: "none",
             }, 0.7)
@@ -772,15 +815,24 @@ export function MotionProvider() {
             },
           });
 
-          mobileDock
-            .to(siteHeader, {
+          if (liteMotion) {
+            mobileDock.set(siteHeader, {
+              top: railTop,
+              left: () => window.innerWidth - 88,
+              width: 78,
+              height: railHeight,
+            }, 0.66);
+          } else {
+            mobileDock.to(siteHeader, {
               top: railTop,
               left: () => window.innerWidth - 88,
               width: 78,
               height: railHeight,
               ease: "none",
               duration: 1,
-            }, 0)
+            }, 0);
+          }
+          mobileDock
             .to(topbar, {
               backgroundColor: "rgba(17, 19, 15, 0)",
               borderColor: "rgba(255, 255, 255, 0)",
@@ -843,7 +895,7 @@ export function MotionProvider() {
         });
       }
 
-      if (siteHeader && topbar && dock && dockTrigger && (reduced || liteMotion)) {
+      if (siteHeader && topbar && dock && dockTrigger && reduced) {
         const initialHeader = siteHeader.getBoundingClientRect();
         const compactDock = mobileMotion;
         const railHeight = () => Math.min(360, window.innerHeight - 150);
@@ -1198,6 +1250,7 @@ export function MotionProvider() {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       window.clearTimeout(markRouteTimer);
       window.clearTimeout(introUnlockTimer);
+      releaseIntroTouchLock();
       if (restoreFrame) cancelAnimationFrame(restoreFrame);
       if (restoringReload) history.scrollRestoration = previousScrollRestoration;
       removeHeroPointer?.();

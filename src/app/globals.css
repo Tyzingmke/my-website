@@ -644,6 +644,17 @@ html[data-home-intro="ready"] .intro-greeting {
   display: none;
 }
 
+html[data-home-intro="playing"],
+html[data-home-intro="playing"] body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html[data-home-intro="playing"] .intro-greeting {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
 .dock-brand {
   display: flex;
   align-items: center;
