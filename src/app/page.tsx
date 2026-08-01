@@ -8,6 +8,7 @@ import { HeroTypingCards } from "@/components/HeroTypingCards";
 export const metadata: Metadata = {
   title: "Antony Mburu | Website Designer & Developer",
   description: "Portfolio of Antony Mburu, a Kenya-based website designer and static web systems builder.",
+  alternates: { canonical: "/" },
 };
 
 const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;

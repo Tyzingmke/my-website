@@ -6,6 +6,7 @@ import { process, services } from "@/data/site";
 export const metadata: Metadata = {
   title: "Services",
   description: "Website design packages, catalogue systems and a clear eight-step delivery process from Antony DigitalWeb.",
+  alternates: { canonical: "/services/" },
 };
 
 const inclusions = [

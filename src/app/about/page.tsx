@@ -7,6 +7,7 @@ import { capabilities, journey } from "@/data/site";
 export const metadata: Metadata = {
   title: "About",
   description: "Antony Mburu's journey from automotive engineering and self-directed IT learning to web development and cybersecurity.",
+  alternates: { canonical: "/about/" },
 };
 
 const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;

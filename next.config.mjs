@@ -1,5 +1,5 @@
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
-const githubPagesBasePath = isGitHubPages ? process.env.NEXT_PUBLIC_BASE_PATH ?? "/my-website" : "";
+const githubPagesBasePath = isGitHubPages ? process.env.NEXT_PUBLIC_BASE_PATH ?? "" : "";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

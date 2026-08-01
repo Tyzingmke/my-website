@@ -15,7 +15,7 @@ const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "sw
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3030"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tonyconsults.co.ke"),
   title: {
     default: `${profile.name} | Website Designer & Developer`,
     template: `%s | ${profile.name}`,
@@ -52,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     name: profile.name,
     jobTitle: profile.role,
     email: profile.email,
+    url: "https://tonyconsults.co.ke",
     address: { "@type": "PostalAddress", addressCountry: "KE" },
   };
 

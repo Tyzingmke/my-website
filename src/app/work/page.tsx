@@ -6,6 +6,7 @@ import { projects } from "@/data/site";
 export const metadata: Metadata = {
   title: "Work",
   description: "Selected website concepts and practical digital systems by Antony Mburu.",
+  alternates: { canonical: "/work/" },
 };
 
 export default function WorkPage() {

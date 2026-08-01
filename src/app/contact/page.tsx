@@ -6,6 +6,7 @@ import { profile } from "@/data/site";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Contact Antony Mburu to discuss a business website, portfolio, catalogue or practical digital system.",
+  alternates: { canonical: "/contact/" },
 };
 
 export default function ContactPage() {
