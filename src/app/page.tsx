@@ -6,8 +6,8 @@ import { capabilities, profile, projects, services } from "@/data/site";
 import { HeroTypingCards } from "@/components/HeroTypingCards";
 
 export const metadata: Metadata = {
-  title: "Antony Mburu | Website Designer & Developer",
-  description: "Portfolio of Antony Mburu, a Kenya-based website designer and static web systems builder.",
+  title: { absolute: "Tony Consults | Website Designer & Developer in Kenya" },
+  description: "Tony Consults is Antony Mburu's Kenya-based web design practice for fast business websites, portfolios, catalogues and practical digital systems.",
   alternates: { canonical: "/" },
 };
 
@@ -96,7 +96,7 @@ export default function Home() {
         </div>
 
         <div className="hero-copy" data-hero-content>
-          <p className="eyebrow">Website designer / static web systems</p>
+          <p className="eyebrow">Tony Consults / website design &amp; digital systems</p>
           <h1 id="home-title">Websites built<br />for real work.</h1>
           <p>I design fast, credible digital homes for businesses, professionals and organisations.</p>
           <div className="hero-actions">

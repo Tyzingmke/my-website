@@ -4,8 +4,8 @@ import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { process, services } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Services",
-  description: "Website design packages, catalogue systems and a clear eight-step delivery process from Antony DigitalWeb.",
+  title: "Web Design Services",
+  description: "Explore Tony Consults website design packages, WhatsApp catalogue systems and a clear delivery process for Kenyan businesses and professionals.",
   alternates: { canonical: "/services/" },
 };
 

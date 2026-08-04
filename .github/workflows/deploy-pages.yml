@@ -40,7 +40,7 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_BASE_PATH: ""
-          NEXT_PUBLIC_SITE_URL: https://tonyconsults.co.ke
+          NEXT_PUBLIC_SITE_URL: https://www.tonyconsults.co.ke
         run: npm run build:next
 
       - name: Upload Pages artifact

@@ -5,8 +5,8 @@ import { ArrowUpRight, Check } from "lucide-react";
 import { capabilities, journey } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "About",
-  description: "Antony Mburu's journey from automotive engineering and self-directed IT learning to web development and cybersecurity.",
+  title: "About Antony Mburu",
+  description: "Meet Antony Mburu, founder of Tony Consults, and follow his journey from automotive engineering to web development, digital systems and cybersecurity.",
   alternates: { canonical: "/about/" },
 };
 
@@ -24,7 +24,7 @@ export default function AboutPage() {
             <span>Kenya / Remote</span>
           </div>
           <div className="page-hero-copy" data-reveal>
-            <p className="eyebrow">About Antony</p>
+            <p className="eyebrow">About Antony / Tony Consults</p>
             <h1>Practical thinking.<br />Digital direction.</h1>
             <p>I combine engineering discipline, self-directed technology learning and hands-on web development to build useful digital systems.</p>
             <p className="about-editorial-note">My work starts with the real problem, then gives every word, screen and interaction a clear job to do.</p>

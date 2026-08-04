@@ -8,3 +8,4 @@ dist/
 *.log
 *.tsbuildinfo
 work/
+.codex-remote-attachments/

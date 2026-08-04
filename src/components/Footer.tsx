@@ -15,7 +15,7 @@ export function Footer() {
         <nav aria-label="Footer navigation">{nav.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}</nav>
         <div><a href={`mailto:${profile.email}`}>{profile.email}</a><span>{profile.location} / Remote</span></div>
       </div>
-      <div className="footer-bottom"><span>Antony DigitalWeb</span><span>Built with Next.js</span><span>{new Date().getFullYear()}</span></div>
+      <div className="footer-bottom"><span>Tony Consults</span><span>Built with Next.js</span><span>{new Date().getFullYear()}</span></div>
     </footer>
   );
 }

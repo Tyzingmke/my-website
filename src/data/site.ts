@@ -1,6 +1,6 @@
 export const profile = {
   name: "Antony Njoroge Mburu",
-  brand: "Antony DigitalWeb",
+  brand: "Tony Consults",
   role: "Website Designer & Static Web Systems Builder",
   email: "antonymburu379@gmail.com",
   phone: "0759 238 918",
@@ -8,7 +8,7 @@ export const profile = {
   whatsapp: "254759238918",
   location: "Kenya",
   summary:
-    "I build affordable, fast, mobile-friendly websites for local businesses, professionals, churches, catalogues and freelancers who need one credible link that works all day.",
+    "Tony Consults is Antony Mburu's Kenya-based web design practice, building fast, mobile-friendly websites and practical digital systems for businesses, professionals and organisations.",
 };
 
 export const nav = [

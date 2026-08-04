@@ -5,7 +5,7 @@ import { profile } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Contact Antony Mburu to discuss a business website, portfolio, catalogue or practical digital system.",
+  description: "Contact Tony Consults and Antony Mburu to discuss a business website, portfolio, WhatsApp catalogue or practical digital system in Kenya.",
   alternates: { canonical: "/contact/" },
 };
 

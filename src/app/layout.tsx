@@ -13,15 +13,17 @@ import { ScrollExperience } from "@/components/ScrollExperience";
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.tonyconsults.co.ke";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tonyconsults.co.ke"),
+  metadataBase: new URL(siteUrl),
+  applicationName: profile.brand,
   title: {
-    default: `${profile.name} | Website Designer & Developer`,
-    template: `%s | ${profile.name}`,
+    default: "Tony Consults | Website Designer & Developer in Kenya",
+    template: `%s | ${profile.brand}`,
   },
   description: profile.summary,
-  keywords: ["website designer Kenya", "Next.js developer", "GitHub Pages websites", "business website designer", "Antony Mburu"],
+  keywords: ["Tony Consults", "Tony Consults Kenya", "Antony Mburu", "website designer Kenya", "web developer Kenya", "business website designer", "Next.js developer"],
   authors: [{ name: profile.name }],
   creator: profile.name,
   category: "Web design and development",
@@ -29,10 +31,17 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
-    title: `${profile.name} | Website Designer & Developer`,
+    locale: "en_KE",
+    title: "Tony Consults | Websites and Digital Systems by Antony Mburu",
     description: profile.summary,
     siteName: profile.brand,
     images: [{ url: `${basePath}/images/antony-studio.webp`, width: 941, height: 1672, alt: profile.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tony Consults | Website Designer & Developer in Kenya",
+    description: profile.summary,
+    images: [`${basePath}/images/antony-studio.webp`],
   },
 };
 
@@ -48,12 +57,39 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "Person",
-    name: profile.name,
-    jobTitle: profile.role,
-    email: profile.email,
-    url: "https://tonyconsults.co.ke",
-    address: { "@type": "PostalAddress", addressCountry: "KE" },
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: `${siteUrl}/`,
+        name: profile.brand,
+        alternateName: ["Tony Consults Kenya", "tonyconsults.co.ke"],
+        publisher: { "@id": `${siteUrl}/#organization` },
+        inLanguage: "en-KE",
+      },
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: profile.brand,
+        alternateName: "Antony DigitalWeb",
+        url: `${siteUrl}/`,
+        logo: `${siteUrl}/icon.svg`,
+        founder: { "@id": `${siteUrl}/#antony-mburu` },
+        email: profile.email,
+        telephone: profile.phoneHref,
+        areaServed: { "@type": "Country", name: "Kenya" },
+      },
+      {
+        "@type": "Person",
+        "@id": `${siteUrl}/#antony-mburu`,
+        name: profile.name,
+        jobTitle: profile.role,
+        email: profile.email,
+        url: `${siteUrl}/about/`,
+        worksFor: { "@id": `${siteUrl}/#organization` },
+        address: { "@type": "PostalAddress", addressCountry: "KE" },
+      },
+    ],
   };
 
   return (
