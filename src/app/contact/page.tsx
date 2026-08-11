@@ -5,7 +5,7 @@ import { profile } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Contact Tony Consults",
-  description: "Contact Tony Consults and Antony Mburu to discuss a business website, portfolio, WhatsApp catalogue or practical digital system in Kenya.",
+  description: "Contact Tony Consults and Antony Mburu to discuss a portfolio website, business website pack, e-commerce system or practical digital build in Kenya.",
   alternates: { canonical: "/contact/" },
 };
 
@@ -31,7 +31,7 @@ export default function ContactPage() {
             <MessageCircle size={26} />
             <span>Fastest route</span>
             <h2>Start on<br />WhatsApp.</h2>
-            <p><a className="contact-phone" href={`tel:${profile.phoneHref}`}>{profile.phone}</a> &middot; Useful for quick project scoping, catalogue questions and local business enquiries.</p>
+            <p><a className="contact-phone" href={`tel:${profile.phoneHref}`}>{profile.phone}</a> &middot; Useful for quick project scoping, plan questions and local business enquiries.</p>
             <Link className="button button-acid" href={`https://wa.me/${profile.whatsapp}?text=${whatsAppMessage}`} target="_blank" rel="noreferrer">Open WhatsApp <ArrowUpRight size={18} /></Link>
           </article>
           <article className="contact-option" data-reveal>

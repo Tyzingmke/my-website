@@ -7,7 +7,7 @@ import { HeroTypingCards } from "@/components/HeroTypingCards";
 
 export const metadata: Metadata = {
   title: { absolute: "Tony Consults | Website Designer & Developer in Kenya" },
-  description: "Tony Consults is Antony Mburu's Kenya-based web design practice for fast business websites, portfolios, catalogues and practical digital systems.",
+  description: "Tony Consults is Antony Mburu's Kenya-based web design practice for portfolio websites, business website packs, e-commerce systems and practical digital tools.",
   alternates: { canonical: "/" },
 };
 
@@ -156,7 +156,7 @@ export default function Home() {
         <div className="section-shell">
           <div className="section-heading section-heading-split" data-reveal>
             <div><p className="eyebrow">03 / Services</p><h2>Choose the right<br />starting point.</h2></div>
-            <div><p>Clear scopes for a first website, a fuller business presence or a practical catalogue system.</p><Link className="text-link" href="/services/">See services and process <ArrowUpRight size={17} /></Link><Link className="text-link" href="/website-design-kenya/">Website design in Kenya <ArrowUpRight size={17} /></Link></div>
+            <div><p>Clear scopes for a portfolio launch, a business growth pack or a full e-commerce build with tiered upgrades.</p><Link className="text-link" href="/services/">See services and process <ArrowUpRight size={17} /></Link><Link className="text-link" href="/website-design-kenya/">Website design in Kenya <ArrowUpRight size={17} /></Link></div>
           </div>
           <div className="service-preview-list">
             {services.slice(0, 3).map((service, index) => (

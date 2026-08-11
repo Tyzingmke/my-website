@@ -7,15 +7,15 @@ const siteUrl = "https://www.tonyconsults.co.ke";
 
 export const metadata: Metadata = {
   title: "Website Design in Kenya",
-  description: "Mobile-first website design in Kenya for businesses, professionals and organisations. Tony Consults builds fast sites, portfolios and WhatsApp catalogue systems.",
+  description: "Mobile-first website design in Kenya for businesses, professionals and organisations. Tony Consults builds fast portfolio sites, business packs and e-commerce systems.",
   alternates: { canonical: "/website-design-kenya/" },
 };
 
 const focusAreas = [
   {
     title: "Business websites",
-    body: "Clear service pages, contact routes and trust-building content for established or growing Kenyan businesses.",
-    items: ["Mobile-first layouts", "WhatsApp and phone actions", "Search-ready page structure"],
+    body: "Clear service pages, contact routes, SEO foundations and trust-building content for established or growing Kenyan businesses.",
+    items: ["Mobile-first layouts", "SEO-ready page structure", "Phone, email and enquiry actions"],
   },
   {
     title: "Professional portfolios",
@@ -23,9 +23,9 @@ const focusAreas = [
     items: ["Focused personal positioning", "Project and capability pages", "Direct enquiry pathways"],
   },
   {
-    title: "WhatsApp catalogues",
-    body: "Practical product browsing with categories, prices and pre-filled order messages for small and medium sellers.",
-    items: ["Product categories", "Search or filtering", "Prefilled WhatsApp orders"],
+    title: "E-commerce systems",
+    body: "Practical online stores for businesses that want structured products, payments and room to grow toward broader digital selling.",
+    items: ["Product categories", "Payment integrations", "App-ready upper tiers"],
   },
 ];
 
@@ -99,7 +99,7 @@ export default function WebsiteDesignKenyaPage() {
         <div className="section-shell story-intro-grid">
           <p className="eyebrow">Designed for local use</p>
           <h2 data-reveal>Easy on a phone.<br />Clear in a hurry.</h2>
-          <p data-reveal>Customers should quickly understand what you do, why they can trust you and how to contact you. The structure supports mobile browsing, WhatsApp enquiries and straightforward maintenance without turning the website into a complicated system.</p>
+          <p data-reveal>Customers should quickly understand what you do, why they can trust you and how to contact you. The structure supports mobile browsing, clean SEO, practical enquiries and straightforward maintenance without turning the website into a complicated system.</p>
         </div>
       </section>
 
@@ -127,10 +127,10 @@ export default function WebsiteDesignKenyaPage() {
           <div className="process-heading" data-reveal>
             <p className="eyebrow">What the build includes</p>
             <h2 id="kenya-process-title">A strong base<br />before extras.</h2>
-            <p>The essentials are handled first so the website remains useful, fast and easy to own.</p>
+            <p>The essentials are handled first so the website remains useful, fast and easy to own, with richer business features added only when they genuinely help.</p>
           </div>
           <ol className="process-list">
-            {["A responsive layout for phones, tablets and laptops", "Descriptive page titles, headings and internal links", "A clear contact route through WhatsApp, phone or email", "Domain connection, HTTPS checks and launch testing", "A sitemap and crawlable static pages for search engines", "A handover that keeps account ownership visible"].map((item, index) => <li data-reveal key={item}><span>0{index + 1}</span><p>{item}</p></li>)}
+            {["A responsive layout for phones, tablets and laptops", "Descriptive page titles, headings and internal links", "A clear contact route through phone, email or enquiry forms", "Domain connection, HTTPS checks and launch testing", "A sitemap and crawlable static pages for search engines", "A handover that keeps account ownership visible"].map((item, index) => <li data-reveal key={item}><span>0{index + 1}</span><p>{item}</p></li>)}
           </ol>
         </div>
       </section>

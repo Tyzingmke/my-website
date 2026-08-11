@@ -1,26 +1,20 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
-import { process, services } from "@/data/site";
+import { process, serviceFamilies } from "@/data/site";
 
 export const metadata: Metadata = {
   title: "Web Design Services in Kenya",
-  description: "Explore Tony Consults website design packages, WhatsApp catalogue systems and a clear delivery process for Kenyan businesses and professionals.",
+  description: "Explore Tony Consults portfolio websites, business website packs, e-commerce tiers and a clear delivery process for Kenyan businesses and professionals.",
   alternates: { canonical: "/services/" },
 };
-
-const inclusions = [
-  ["Responsive one-page layout", "WhatsApp and contact actions", "SEO and launch essentials"],
-  ["Three structured pages", "Gallery, map and enquiry flow", "SEO and launch essentials"],
-  ["Five structured pages", "Portfolio and testimonials", "Focused revision and handover"],
-  ["Products and categories", "Search or filtering", "Prefilled WhatsApp orders"],
-];
 
 const faqs = [
   ["What do I need before we start?", "Your business details, preferred pages, available text or images, and the main action you want visitors to take. We can identify any gaps during discovery."],
   ["Are domain and hosting costs included?", "They are scoped separately so you keep clear ownership and know which recurring services you are paying for."],
   ["Will the website work on phones?", "Yes. Every package is designed and checked for mobile, tablet and desktop layouts."],
-  ["Can the website grow later?", "Yes. The structure can begin small and expand into additional pages, content or enquiry features when the business is ready."],
+  ["Can the website grow later?", "Yes. Each service family has tier levels so you can begin with a practical scope and move upward when the business needs more pages, integrations or app direction."],
 ];
 
 export default function ServicesPage() {
@@ -43,20 +37,48 @@ export default function ServicesPage() {
       <section className="service-catalogue section-band section-light" aria-labelledby="services-title">
         <div className="section-shell">
           <div className="section-heading section-heading-split" data-reveal>
-            <div><p className="eyebrow">Starting points</p><h2 id="services-title">Scope before<br />complexity.</h2></div>
-            <p>The listed ranges are launch-stage guides. The final quote follows the content, features and delivery needs we agree on.</p>
+            <div><p className="eyebrow">Service families</p><h2 id="services-title">Tiered plans,<br />clear upgrades.</h2></div>
+            <p>Each family starts with a smaller version and rises into broader functionality. That keeps the first build usable while leaving room for SEO, logins, payments, mobile apps or richer business workflows later.</p>
           </div>
-          <div className="service-catalogue-grid">
-            {services.map((service, index) => (
-              <article className="service-detail" data-reveal key={service.title}>
-                <div className="service-detail-index">0{index + 1}</div>
-                <div>
-                  <span>{index === 3 ? "Catalogue system" : "Website package"}</span>
-                  <h3>{service.title}</h3>
-                  <p>{service.body}</p>
+          <div className="service-family-grid">
+            {serviceFamilies.map((family, index) => (
+              <article className={`service-family service-family-${family.accent}`} data-reveal key={family.title}>
+                <div className="service-family-media">
+                  <Image src={family.image} alt={family.title} width={941} height={1672} sizes="(max-width: 900px) 100vw, 30vw" />
+                  <div className="service-family-media-overlay">
+                    <span>{family.label}</span>
+                    <strong>{family.range}</strong>
+                  </div>
                 </div>
-                <ul>{inclusions[index].map((item) => <li key={item}><Check size={15} />{item}</li>)}</ul>
-                <div className="service-detail-foot"><strong>{service.price}</strong><Link href="/contact/" aria-label={`Ask about ${service.title}`}>Ask about this <ArrowUpRight size={16} /></Link></div>
+                <div className="service-family-copy">
+                  <div className="service-detail-index">0{index + 1}</div>
+                  <div>
+                    <span>Plan family</span>
+                    <h3>{family.title}</h3>
+                    <p>{family.body}</p>
+                  </div>
+                  <ul className="service-family-highlights">
+                    {family.highlights.map((item) => <li key={item}><Check size={15} />{item}</li>)}
+                  </ul>
+                </div>
+                <div className="tier-grid">
+                  {family.tiers.map((tier) => (
+                    <article className="tier-card" key={`${family.title}-${tier.name}`}>
+                      <div className="tier-card-head">
+                        <span>{tier.name}</span>
+                        <strong>{tier.price}</strong>
+                      </div>
+                      <p>{tier.body}</p>
+                      <ul>
+                        {tier.features.map((item) => <li key={item}><Check size={14} />{item}</li>)}
+                      </ul>
+                    </article>
+                  ))}
+                </div>
+                <div className="service-family-foot">
+                  <strong>{family.range}</strong>
+                  <Link href="/contact/" aria-label={`Ask about ${family.title}`}>Ask about this family <ArrowUpRight size={16} /></Link>
+                </div>
               </article>
             ))}
           </div>

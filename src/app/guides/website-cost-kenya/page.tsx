@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
-import { profile, services } from "@/data/site";
+import { profile, serviceFamilies, services } from "@/data/site";
 
 const siteUrl = "https://www.tonyconsults.co.ke";
 
@@ -13,9 +14,9 @@ export const metadata: Metadata = {
 };
 
 const faqs = [
-  ["What is the lowest-cost website option?", "The current Single-Page Starter range is KES 3,000-4,000 for a focused one-page presence with contact and WhatsApp actions."],
+  ["What is the lowest-cost website option?", "The current entry level starts in the portfolio family, where the Starter tier begins around KES 4,000-6,000 for a focused online presence."],
   ["Are domain and hosting included in the website price?", "Domain, hosting and paid third-party services are scoped separately so ownership and recurring costs remain clear."],
-  ["Why does a catalogue cost more than a simple website?", "A catalogue needs structured product data, categories, filtering or search and carefully prepared order messages, so the content and testing are more involved."],
+  ["Why does an e-commerce plan cost more than a simple website?", "An e-commerce build needs product structure, payments, customer flow logic and more testing, so the work is broader than a simple brochure or portfolio site."],
   ["Can I begin small and add pages later?", "Yes. A focused first version can be expanded when the business has more content, services or customer needs."],
 ];
 
@@ -53,10 +54,9 @@ const structuredData = {
 };
 
 const packageIncludes = [
-  ["One focused page", "Mobile layout", "WhatsApp and contact actions"],
-  ["Three structured pages", "Gallery or map", "Customer enquiry route"],
-  ["Five structured pages", "Portfolio and testimonials", "Focused revision and handover"],
-  ["Products and categories", "Search or filtering", "Prefilled WhatsApp orders"],
+  ["Five tier levels", "Personal-brand focus", "Fast launch options"],
+  ["SEO and business pages", "Login-ready upper tiers", "Growth-focused structure"],
+  ["Payments and store logic", "App-ready upper tiers", "Operational scale options"],
 ];
 
 export default function WebsiteCostKenyaGuide() {
@@ -79,8 +79,8 @@ export default function WebsiteCostKenyaGuide() {
       <section className="story-intro section-band section-acid">
         <div className="section-shell story-intro-grid">
           <p className="eyebrow">The short answer</p>
-          <h2 data-reveal>KES 3,000<br />to KES 12,000.</h2>
-          <p data-reveal>That range covers Tony Consults&apos; current starting packages, from a focused single page to a fuller business website or WhatsApp catalogue. The final quote depends on the actual work, and recurring services remain separate.</p>
+          <h2 data-reveal>KES 4,000<br />to KES 120,000+.</h2>
+          <p data-reveal>That range covers Tony Consults&apos; current tiered families, from lean portfolio launches to broader business websites and larger e-commerce systems. The final quote still depends on the actual scope, integrations and delivery expectations.</p>
         </div>
       </section>
 
@@ -97,6 +97,40 @@ export default function WebsiteCostKenyaGuide() {
                 <div><span>Starting range</span><h3>{service.title}</h3><p>{service.body}</p></div>
                 <ul>{packageIncludes[index].map((item) => <li key={item}><Check size={15} />{item}</li>)}</ul>
                 <div className="service-detail-foot"><strong>{service.price}</strong><Link href="/contact/">Request this scope <ArrowUpRight size={16} /></Link></div>
+              </article>
+            ))}
+          </div>
+          <div className="service-family-grid service-family-grid-guide">
+            {serviceFamilies.map((family) => (
+              <article className={`service-family service-family-${family.accent}`} data-reveal key={`guide-${family.title}`}>
+                <div className="service-family-media">
+                  <Image src={family.image} alt={family.title} width={941} height={1672} sizes="(max-width: 900px) 100vw, 28vw" />
+                  <div className="service-family-media-overlay">
+                    <span>{family.label}</span>
+                    <strong>{family.range}</strong>
+                  </div>
+                </div>
+                <div className="service-family-copy">
+                  <div>
+                    <span>How this family scales</span>
+                    <h3>{family.title}</h3>
+                    <p>{family.body}</p>
+                  </div>
+                  <ul className="service-family-highlights">
+                    {family.highlights.map((item) => <li key={item}><Check size={15} />{item}</li>)}
+                  </ul>
+                </div>
+                <div className="tier-grid">
+                  {family.tiers.map((tier) => (
+                    <article className="tier-card" key={`guide-${family.title}-${tier.name}`}>
+                      <div className="tier-card-head">
+                        <span>{tier.name}</span>
+                        <strong>{tier.price}</strong>
+                      </div>
+                      <p>{tier.body}</p>
+                    </article>
+                  ))}
+                </div>
               </article>
             ))}
           </div>

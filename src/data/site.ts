@@ -28,34 +28,170 @@ export const stats = [
 
 export const services = [
   {
-    title: "Single-Page Starter",
-    price: "KES 3,000-4,000",
-    body: "A sharp one-page presence with services, contacts, WhatsApp action, mobile layout and launch support.",
+    title: "Portfolio Websites",
+    price: "KES 4,000-22,000",
+    body: "Tiered portfolio builds for freelancers, consultants, creatives and job seekers who need a credible personal brand online.",
   },
   {
-    title: "Professional 3-Page Website",
-    price: "KES 5,000-7,000",
-    body: "Home, about or services, contact, gallery, map, SEO basics, and a clear customer enquiry route.",
+    title: "Business Website Packs",
+    price: "KES 7,500-48,000",
+    body: "Business-focused websites with SEO foundations, service pages, login-ready areas, support pages and practical growth options.",
   },
   {
-    title: "Business 5-Page Website",
-    price: "KES 8,000-12,000",
-    body: "A fuller business site with portfolio, testimonials, enquiry flow and structured service pages.",
+    title: "E-commerce Websites",
+    price: "KES 14,000-120,000+",
+    body: "Store builds with catalogue structure, payments, delivery logic and mobile-app readiness as the plan level rises.",
+  },
+];
+
+export const serviceFamilies = [
+  {
+    title: "Portfolio Websites",
+    label: "Personal brand pack",
+    range: "KES 4,000-22,000",
+    image: "/images/antony-studio.webp",
+    accent: "sand",
+    body:
+      "For personal brands that need a polished first impression, clear positioning and a practical contact route.",
+    highlights: [
+      "Responsive pages for mobile, tablet and desktop",
+      "Personal brand copy structure and project sections",
+      "Contact forms, direct calls and email actions",
+    ],
+    tiers: [
+      {
+        name: "Starter",
+        price: "KES 4,000-6,000",
+        body: "A focused landing page for a consultant, freelancer or graduate profile.",
+        features: ["One-page layout", "Biography and CTA", "Basic SEO setup"],
+      },
+      {
+        name: "Bronze",
+        price: "KES 6,500-9,000",
+        body: "A stronger personal site with sections for work, skills and contact.",
+        features: ["Up to 3 pages", "Project highlights", "Lead form or booking CTA"],
+      },
+      {
+        name: "Gold",
+        price: "KES 10,000-13,500",
+        body: "A refined portfolio with testimonials, media blocks and clearer client positioning.",
+        features: ["Up to 5 pages", "Testimonials", "Enhanced page SEO"],
+      },
+      {
+        name: "Diamond",
+        price: "KES 14,000-18,000",
+        body: "A premium portfolio for people selling high-value expertise or creative work.",
+        features: ["Case-study structure", "Motion detailing", "Advanced enquiry pathways"],
+      },
+      {
+        name: "Elite",
+        price: "KES 19,000-22,000",
+        body: "A signature portfolio with sharper storytelling, authority pages and hiring-ready polish.",
+        features: ["Authority pages", "Custom UI moments", "Launch support"],
+      },
+    ],
   },
   {
-    title: "WhatsApp Catalogue",
-    price: "KES 5,000-12,000",
-    body: "Product cards, categories, prices, item codes, search or filters, and order messages sent to WhatsApp.",
+    title: "Business Website Packs",
+    label: "Operations + growth pack",
+    range: "KES 7,500-48,000",
+    image: "/images/antony-logo-shirt.webp",
+    accent: "earth",
+    body:
+      "For service businesses, agencies, firms and organisations that need credibility, discoverability and room to scale.",
+    highlights: [
+      "SEO-first structure for key services and locations",
+      "Business packs can include catalogue sections instead of splitting them into a separate product",
+      "Login-ready pages, dashboards or client-access areas at higher levels",
+    ],
+    tiers: [
+      {
+        name: "Starter",
+        price: "KES 7,500-10,000",
+        body: "A compact business website with the essentials done properly.",
+        features: ["Up to 3 pages", "Core business information", "Contact and map actions"],
+      },
+      {
+        name: "Bronze",
+        price: "KES 11,000-16,000",
+        body: "A stronger company site with richer services and trust-building content.",
+        features: ["Up to 5 pages", "Testimonial section", "On-page SEO basics"],
+      },
+      {
+        name: "Gold",
+        price: "KES 17,000-24,000",
+        body: "A business-ready site with growth pages, blog-ready sections and tighter lead flow.",
+        features: ["Up to 8 pages", "Blog or news section", "Lead capture flow"],
+      },
+      {
+        name: "Diamond",
+        price: "KES 25,000-36,000",
+        body: "A more advanced business system with gated pages, quotations or customer workflows.",
+        features: ["Login-ready pages", "Business process pages", "Structured SEO setup"],
+      },
+      {
+        name: "Elite",
+        price: "KES 37,000-48,000",
+        body: "A premium business pack combining strong content architecture and operational features.",
+        features: ["Client portal direction", "Advanced support flow", "Higher-priority launch care"],
+      },
+    ],
+  },
+  {
+    title: "E-commerce Websites",
+    label: "Selling systems pack",
+    range: "KES 14,000-120,000+",
+    image: "/images/antony-logo-shirt-soft.webp",
+    accent: "mint",
+    body:
+      "For stores that need product structure, payment handling and a roadmap toward stronger sales systems and mobile apps.",
+    highlights: [
+      "Catalogue organisation, filtering and product page structure",
+      "Payment integrations can include M-Pesa, bank cards and Google Pay where the stack supports them",
+      "Mobile-app planning or companion apps become part of upper tiers",
+    ],
+    tiers: [
+      {
+        name: "Starter",
+        price: "KES 14,000-22,000",
+        body: "A small online store for a focused product line or launch collection.",
+        features: ["Up to 20 products", "Simple checkout flow", "M-Pesa inquiry path"],
+      },
+      {
+        name: "Bronze",
+        price: "KES 23,000-36,000",
+        body: "A more practical e-commerce site with better structure and customer handling.",
+        features: ["Up to 60 products", "Category filters", "M-Pesa + bank card setup"],
+      },
+      {
+        name: "Gold",
+        price: "KES 37,000-58,000",
+        body: "A serious storefront with broader payment support and stronger operations.",
+        features: ["Up to 150 products", "Order management flow", "M-Pesa + cards + Google Pay"],
+      },
+      {
+        name: "Diamond",
+        price: "KES 59,000-84,000",
+        body: "A larger commerce build with automation, richer customer journeys and store integrations.",
+        features: ["Advanced product logic", "Delivery zone handling", "Automation and reporting"],
+      },
+      {
+        name: "Elite",
+        price: "KES 85,000-120,000+",
+        body: "A premium commerce stack with expansion planning toward app experiences and operational scale.",
+        features: ["Mobile app planning", "API or ERP-ready direction", "Priority optimisation support"],
+      },
+    ],
   },
 ];
 
 export const projects = [
   {
     year: "01",
-    name: "WhatsApp Product Catalogue",
-    type: "Catalogue",
-    tags: ["Filters", "Product Codes", "Order Message"],
-    copy: "Filtering, product selection and pre-filled WhatsApp order messages for small sellers.",
+    name: "Business Pack Catalogue Flow",
+    type: "Business Pack",
+    tags: ["Products", "Filters", "Enquiry Flow"],
+    copy: "A product discovery flow included as part of a broader business website pack rather than being split into a separate catalogue offer.",
   },
   {
     year: "02",
@@ -89,8 +225,8 @@ export const projects = [
     year: "06",
     name: "3D Farm Marketplace",
     type: "3D Commerce",
-    tags: ["Three.js", "Products", "WhatsApp"],
-    copy: "Lightweight 3D product views paired with simple WhatsApp ordering.",
+    tags: ["Three.js", "Products", "Checkout"],
+    copy: "Lightweight 3D product views paired with a cleaner store direction and scalable payment paths.",
   },
   {
     year: "07",

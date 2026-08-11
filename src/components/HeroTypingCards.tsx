@@ -22,7 +22,7 @@ import {
 const projectTypes = [
   { label: "Business websites", icon: Building2 },
   { label: "Portfolio websites", icon: PanelsTopLeft },
-  { label: "Product catalogues", icon: ShoppingBag },
+  { label: "E-commerce systems", icon: ShoppingBag },
   { label: "Church and NGO sites", icon: HandHeart },
   { label: "Landing pages", icon: Megaphone },
   { label: "Professional profiles", icon: UserRound },
@@ -126,7 +126,7 @@ export function HeroTypingCards() {
         <div className="typing-card-copy">
           <small>Available for</small>
           <strong className="typing-line" aria-hidden="true">{project.value}<i /></strong>
-          <span className="sr-only">Available for business websites, portfolios, catalogues and redesigns.</span>
+          <span className="sr-only">Available for business websites, portfolios, e-commerce systems and redesigns.</span>
         </div>
       </div>
 
