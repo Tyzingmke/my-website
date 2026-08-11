@@ -1,7 +1,9 @@
 "use client";
 
+import type { ServicePreviewKind } from "@/data/site";
+
 type ServicePreviewMockupProps = {
-  kind: "portfolio" | "business" | "commerce";
+  kind: ServicePreviewKind;
   label: string;
 };
 

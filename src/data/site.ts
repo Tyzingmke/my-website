@@ -44,7 +44,27 @@ export const services = [
   },
 ];
 
-export const serviceFamilies = [
+export type ServicePreviewKind = "portfolio" | "business" | "commerce";
+
+type ServiceTier = {
+  name: "Starter" | "Bronze" | "Gold" | "Diamond" | "Elite";
+  price: string;
+  body: string;
+  features: string[];
+};
+
+type ServiceFamily = {
+  title: string;
+  label: string;
+  range: string;
+  preview: ServicePreviewKind;
+  accent: "sand" | "earth" | "mint";
+  body: string;
+  highlights: string[];
+  tiers: ServiceTier[];
+};
+
+export const serviceFamilies: ServiceFamily[] = [
   {
     title: "Portfolio Websites",
     label: "Personal brand pack",

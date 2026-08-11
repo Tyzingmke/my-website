@@ -34,11 +34,7 @@ const waitForImages = () =>
   Promise.allSettled(
     Array.from(document.images).map((image) => {
       if (image.complete) return Promise.resolve();
-      if ("decode" in image) return image.decode().catch(() => undefined);
-      return new Promise<void>((resolve) => {
-        image.addEventListener("load", () => resolve(), { once: true });
-        image.addEventListener("error", () => resolve(), { once: true });
-      });
+      return image.decode().catch(() => undefined);
     }),
   ).then(() => undefined);
 
