@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { projects } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Web Design Portfolio",
+  title: "Website Design Portfolio in Kenya",
   description: "Explore selected website concepts, portfolios, catalogues and practical digital systems designed by Tony Consults and Antony Mburu.",
   alternates: { canonical: "/work/" },
 };

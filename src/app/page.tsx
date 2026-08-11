@@ -65,13 +65,14 @@ export default function Home() {
           <Image
             className="hero-image hero-image-soft"
             data-hero-image="soft"
-            src={assetPath("/images/antony-logo-shirt.webp")}
+            src={assetPath("/images/antony-logo-shirt-soft.webp")}
             alt=""
             width={941}
             height={1672}
             sizes="(max-width: 700px) 100vw, 58vw"
             aria-hidden="true"
             priority
+            fetchPriority="high"
           />
           <Image
             className="hero-image hero-image-sharp"
@@ -82,16 +83,16 @@ export default function Home() {
             height={1672}
             sizes="(max-width: 700px) 100vw, 58vw"
             priority
+            fetchPriority="high"
           />
           <Image
             className="hero-image hero-image-edge"
-            src={assetPath("/images/antony-logo-shirt.webp")}
+            src={assetPath("/images/antony-logo-shirt-soft.webp")}
             alt=""
             width={941}
             height={1672}
             sizes="(max-width: 700px) 120vw, 64vw"
             aria-hidden="true"
-            priority
           />
         </div>
 
@@ -155,7 +156,7 @@ export default function Home() {
         <div className="section-shell">
           <div className="section-heading section-heading-split" data-reveal>
             <div><p className="eyebrow">03 / Services</p><h2>Choose the right<br />starting point.</h2></div>
-            <div><p>Clear scopes for a first website, a fuller business presence or a practical catalogue system.</p><Link className="text-link" href="/services/">See services and process <ArrowUpRight size={17} /></Link></div>
+            <div><p>Clear scopes for a first website, a fuller business presence or a practical catalogue system.</p><Link className="text-link" href="/services/">See services and process <ArrowUpRight size={17} /></Link><Link className="text-link" href="/website-design-kenya/">Website design in Kenya <ArrowUpRight size={17} /></Link></div>
           </div>
           <div className="service-preview-list">
             {services.slice(0, 3).map((service, index) => (

@@ -21,7 +21,11 @@ export function MotionProvider() {
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
-    ScrollTrigger.config({ ignoreMobileResize: true, limitCallbacks: true });
+    ScrollTrigger.config({
+      ignoreMobileResize: true,
+      limitCallbacks: true,
+      autoRefreshEvents: "visibilitychange,resize",
+    });
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const desktop = matchMedia("(min-width: 961px) and (pointer: fine)").matches;
@@ -86,11 +90,18 @@ export function MotionProvider() {
     let markRouteTimer = 0;
     let introUnlockTimer = 0;
     let restoreFrame = 0;
+    let refreshFrame = 0;
     let removeHeroPointer: (() => void) | null = null;
     let introTouchLocked = false;
     const previousScrollRestoration = history.scrollRestoration;
     const previousBodyOverflow = playHomeIntro ? "" : document.body.style.overflow;
     const preventIntroTouchScroll = (event: TouchEvent) => event.preventDefault();
+    const scheduleScrollRefresh = () => {
+      if (refreshFrame) cancelAnimationFrame(refreshFrame);
+      refreshFrame = requestAnimationFrame(() => {
+        refreshFrame = requestAnimationFrame(() => ScrollTrigger.refresh());
+      });
+    };
     const releaseIntroTouchLock = () => {
       if (!introTouchLocked) return;
       document.removeEventListener("touchmove", preventIntroTouchScroll);
@@ -1251,7 +1262,11 @@ export function MotionProvider() {
       }
     }, document.body);
 
-    requestAnimationFrame(() => ScrollTrigger.refresh());
+    if (playHomeIntro) {
+      window.addEventListener("home-intro-complete", scheduleScrollRefresh, { once: true });
+    } else {
+      scheduleScrollRefresh();
+    }
 
     return () => {
       context.revert();
@@ -1261,6 +1276,8 @@ export function MotionProvider() {
       releaseIntroTouchLock();
       stopPerformanceMonitor?.();
       if (restoreFrame) cancelAnimationFrame(restoreFrame);
+      if (refreshFrame) cancelAnimationFrame(refreshFrame);
+      window.removeEventListener("home-intro-complete", scheduleScrollRefresh);
       if (restoringReload) history.scrollRestoration = previousScrollRestoration;
       removeHeroPointer?.();
       if (root.dataset.pageTransition !== "active") document.body.style.overflow = previousBodyOverflow;

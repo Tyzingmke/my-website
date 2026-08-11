@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
-import { profile } from "@/data/site";
+import { capabilities, profile, services } from "@/data/site";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MotionProvider } from "@/components/MotionProvider";
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: `%s | ${profile.brand}`,
   },
   description: profile.summary,
-  keywords: ["Tony Consults", "Tony Consults Kenya", "Antony Mburu", "website designer Kenya", "web developer Kenya", "business website designer", "Next.js developer"],
+  keywords: null,
   authors: [{ name: profile.name }],
   creator: profile.name,
   category: "Web design and development",
@@ -83,11 +83,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         name: profile.brand,
         alternateName: "Antony DigitalWeb",
         url: `${siteUrl}/`,
-        logo: `${siteUrl}/web-app-manifest-512x512.png`,
+        logo: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/web-app-manifest-512x512.png`,
+          contentUrl: `${siteUrl}/web-app-manifest-512x512.png`,
+          width: 512,
+          height: 512,
+        },
+        image: `${siteUrl}/images/antony-studio.webp`,
         founder: { "@id": `${siteUrl}/#antony-mburu` },
         email: profile.email,
         telephone: profile.phoneHref,
         areaServed: { "@type": "Country", name: "Kenya" },
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer enquiries",
+          email: profile.email,
+          telephone: profile.phoneHref,
+          areaServed: "KE",
+          availableLanguage: "English",
+        },
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Website design and digital system services",
+          itemListElement: services.map((service) => ({
+            "@type": "Offer",
+            itemOffered: {
+              "@type": "Service",
+              name: service.title,
+              description: service.body,
+              areaServed: { "@type": "Country", name: "Kenya" },
+            },
+          })),
+        },
       },
       {
         "@type": "Person",
@@ -97,17 +125,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         email: profile.email,
         url: `${siteUrl}/about/`,
         worksFor: { "@id": `${siteUrl}/#organization` },
+        knowsAbout: capabilities,
         address: { "@type": "PostalAddress", addressCountry: "KE" },
       },
     ],
   };
 
   return (
-    <html lang="en" data-motion="pending" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var stored=localStorage.getItem("antony-theme");var theme=stored==="dark"||stored==="light"?stored:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`,
+            __html: `(function(){document.documentElement.setAttribute("data-motion","pending");try{var stored=localStorage.getItem("antony-theme");var theme=stored==="dark"||stored==="light"?stored:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`,
           }}
         />
       </head>

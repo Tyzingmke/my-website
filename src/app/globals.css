@@ -930,7 +930,7 @@ html[data-home-intro="playing"] .intro-greeting {
   place-items: center;
   padding-inline: 24px;
   background: var(--concrete);
-  backdrop-filter: blur(12px) saturate(0.92);
+  backdrop-filter: none;
   font-family: var(--font-display), Arial, sans-serif;
   font-size: clamp(5.4rem, 8vw, 8.5rem);
   font-weight: 650;
@@ -1184,7 +1184,7 @@ html:not([data-motion]) [data-hero-name] {
 
 .hero-image-soft {
   z-index: 1;
-  filter: blur(14px) saturate(0.9);
+  filter: saturate(0.9);
 }
 
 .hero-image-sharp {
@@ -1200,7 +1200,7 @@ html:not([data-motion]) [data-hero-name] {
 .hero-image-edge {
   z-index: 3;
   opacity: 0.68;
-  filter: blur(16px) saturate(0.94);
+  filter: saturate(0.94);
   mask-image: linear-gradient(to bottom, transparent 67%, #000 83%, transparent 100%);
   pointer-events: none;
 }
@@ -1417,7 +1417,7 @@ html:not([data-motion]) [data-hero-name] {
 }
 
 .capability-strip b {
-  color: rgba(17, 19, 15, 0.45);
+  color: rgba(17, 19, 15, 0.74);
 }
 
 .featured-grid {
@@ -2683,6 +2683,12 @@ html[data-performance="legacy"] [data-mobile-nav-transfer-layer] > * {
   align-items: center;
 }
 
+.footer-meta nav a {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
 .footer-meta > div:last-child {
   align-items: flex-end;
   text-align: right;
@@ -2690,6 +2696,30 @@ html[data-performance="legacy"] [data-mobile-nav-transfer-layer] > * {
 
 .footer-meta span {
   color: rgba(255, 255, 255, 0.55);
+}
+
+.footer-search-links {
+  width: min(var(--shell), 100%);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-inline: auto;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line-light);
+  font-size: 0.74rem;
+}
+
+.footer-search-links span {
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+}
+
+.footer-search-links a {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .footer-bottom {
@@ -3637,6 +3667,12 @@ html[data-performance="legacy"] [data-mobile-nav-transfer-layer] > * {
   .footer-meta > div:last-child {
     align-items: flex-start;
     text-align: left;
+  }
+
+  .footer-search-links {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 

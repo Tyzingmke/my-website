@@ -15,6 +15,11 @@ export function Footer() {
         <nav aria-label="Footer navigation">{nav.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}</nav>
         <div><a href={`mailto:${profile.email}`}>{profile.email}</a><span>{profile.location} / Remote</span></div>
       </div>
+      <nav className="footer-search-links" aria-label="Popular website resources">
+        <span>Popular</span>
+        <Link href="/website-design-kenya/">Website design in Kenya</Link>
+        <Link href="/guides/website-cost-kenya/">Website cost guide</Link>
+      </nav>
       <div className="footer-bottom"><span>Tony Consults</span><span>Built with Next.js</span><span>{new Date().getFullYear()}</span></div>
     </footer>
   );

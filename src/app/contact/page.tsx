@@ -4,7 +4,7 @@ import { ArrowUpRight, Clock3, Mail, MapPin, MessageCircle } from "lucide-react"
 import { profile } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact Tony Consults",
   description: "Contact Tony Consults and Antony Mburu to discuss a business website, portfolio, WhatsApp catalogue or practical digital system in Kenya.",
   alternates: { canonical: "/contact/" },
 };

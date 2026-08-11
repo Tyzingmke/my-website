@@ -176,7 +176,7 @@ export function Header() {
   return (
     <header className={home ? "site-header site-header-home" : "site-header"} data-site-header data-home-header={home ? "" : undefined}>
       <div className="topbar-shell" data-header-top ref={topbarRef}>
-        <Link className="header-brand" data-header-transfer="brand" href="/" aria-label="Antony Mburu home" onClick={() => closeMenu()}>
+        <Link className="header-brand" data-header-transfer="brand" href="/" onClick={() => closeMenu()}>
           <strong>ANTONY</strong><span>MBURU</span>
         </Link>
 
@@ -200,7 +200,7 @@ export function Header() {
       </div>
 
       <div className="home-dock-shell" data-header-dock aria-hidden="true">
-          <Link className="dock-brand" data-dock-transfer="brand" href="/" aria-label="Antony Mburu home">
+          <Link className="dock-brand" data-dock-transfer="brand" href="/">
             <strong>ANTONY</strong><span>MBURU</span>
           </Link>
           {themeButton("dock")}

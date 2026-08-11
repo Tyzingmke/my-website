@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { process, services } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Web Design Services",
+  title: "Web Design Services in Kenya",
   description: "Explore Tony Consults website design packages, WhatsApp catalogue systems and a clear delivery process for Kenyan businesses and professionals.",
   alternates: { canonical: "/services/" },
 };
@@ -35,6 +35,7 @@ export default function ServicesPage() {
           <div className="page-hero-aside" data-reveal>
             <p>Choose a practical starting point. Every scope is confirmed before work begins, with domains and paid services handled transparently.</p>
             <Link className="text-link" href="/contact/">Discuss your project <ArrowUpRight size={17} /></Link>
+            <Link className="text-link" href="/guides/website-cost-kenya/">Read the Kenya pricing guide <ArrowUpRight size={17} /></Link>
           </div>
         </div>
       </section>
