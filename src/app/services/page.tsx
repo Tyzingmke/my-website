@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { process, serviceFamilies } from "@/data/site";
+import { ServicePreviewMockup } from "@/components/ServicePreviewMockup";
 
 export const metadata: Metadata = {
   title: "Web Design Services in Kenya",
@@ -44,7 +44,7 @@ export default function ServicesPage() {
             {serviceFamilies.map((family, index) => (
               <article className={`service-family service-family-${family.accent}`} data-reveal key={family.title}>
                 <div className="service-family-media">
-                  <Image src={family.image} alt={family.title} width={941} height={1672} sizes="(max-width: 900px) 100vw, 30vw" />
+                  <ServicePreviewMockup kind={family.preview} label={family.title} />
                   <div className="service-family-media-overlay">
                     <span>{family.label}</span>
                     <strong>{family.range}</strong>
@@ -63,7 +63,7 @@ export default function ServicesPage() {
                 </div>
                 <div className="tier-grid">
                   {family.tiers.map((tier) => (
-                    <article className="tier-card" key={`${family.title}-${tier.name}`}>
+                    <article className={`tier-card${tier.name === "Gold" ? " tier-card-featured" : ""}`} key={`${family.title}-${tier.name}`}>
                       <div className="tier-card-head">
                         <span>{tier.name}</span>
                         <strong>{tier.price}</strong>

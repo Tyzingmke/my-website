@@ -49,7 +49,7 @@ export const serviceFamilies = [
     title: "Portfolio Websites",
     label: "Personal brand pack",
     range: "KES 4,000-22,000",
-    image: "/images/antony-studio.webp",
+    preview: "portfolio",
     accent: "sand",
     body:
       "For personal brands that need a polished first impression, clear positioning and a practical contact route.",
@@ -95,7 +95,7 @@ export const serviceFamilies = [
     title: "Business Website Packs",
     label: "Operations + growth pack",
     range: "KES 7,500-48,000",
-    image: "/images/antony-logo-shirt.webp",
+    preview: "business",
     accent: "earth",
     body:
       "For service businesses, agencies, firms and organisations that need credibility, discoverability and room to scale.",
@@ -141,7 +141,7 @@ export const serviceFamilies = [
     title: "E-commerce Websites",
     label: "Selling systems pack",
     range: "KES 14,000-120,000+",
-    image: "/images/antony-logo-shirt-soft.webp",
+    preview: "commerce",
     accent: "mint",
     body:
       "For stores that need product structure, payment handling and a roadmap toward stronger sales systems and mobile apps.",

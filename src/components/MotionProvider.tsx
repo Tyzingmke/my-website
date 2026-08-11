@@ -63,7 +63,8 @@ export function MotionProvider() {
     const restoringReload = reloadScrollY > 4;
     if (restoringReload && pathname === "/") introPlayed.current = true;
     const returningHome = pathname === "/" && introPlayed.current && previousPath.current !== "/";
-    const playHomeIntro = pathname === "/" && (!introPlayed.current || previousPath.current !== "/") && !restoringReload;
+    const firstLoadScreenActive = pathname === "/" && root.dataset.firstLoadScreen === "playing";
+    const playHomeIntro = pathname === "/" && (!introPlayed.current || previousPath.current !== "/") && !restoringReload && !firstLoadScreenActive;
     const returnGreetings = [
       {
         opening: "You're back.",
@@ -83,7 +84,7 @@ export function MotionProvider() {
       },
     ];
     const returnGreeting = returnGreetings[returnVisit.current % returnGreetings.length];
-    root.dataset.homeIntro = playHomeIntro ? "playing" : "ready";
+    root.dataset.homeIntro = firstLoadScreenActive ? "ready" : playHomeIntro ? "playing" : "ready";
 
     let lenis: Lenis | null = null;
     let tick: ((time: number) => void) | null = null;

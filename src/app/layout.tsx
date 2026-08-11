@@ -4,6 +4,7 @@ import "lenis/dist/lenis.css";
 import "./globals.css";
 import { capabilities, profile, services } from "@/data/site";
 import { Footer } from "@/components/Footer";
+import { FirstLoadScreen } from "@/components/FirstLoadScreen";
 import { Header } from "@/components/Header";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PageTransition } from "@/components/PageTransition";
@@ -136,7 +137,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){document.documentElement.setAttribute("data-motion","pending");try{var stored=localStorage.getItem("antony-theme");var theme=stored==="dark"||stored==="light"?stored:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",theme);document.documentElement.style.colorScheme=theme;}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`,
+            __html: `(function(){var root=document.documentElement;root.setAttribute("data-motion","pending");try{var stored=localStorage.getItem("antony-theme");var theme=stored==="dark"||stored==="light"?stored:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");root.setAttribute("data-theme",theme);root.style.colorScheme=theme;}catch(e){root.setAttribute("data-theme","light");}try{var seen=sessionStorage.getItem("tony-first-load-screen-seen")==="true";var homePath=location.pathname==="/"||location.pathname==="${basePath}/"||location.pathname==="${basePath}";root.setAttribute("data-first-load-screen",homePath&&!seen?"playing":"ready");}catch(e){root.setAttribute("data-first-load-screen","ready");}})();`,
           }}
         />
       </head>
@@ -145,6 +146,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <style>{`.intro-greeting,[data-hero-image="soft"]{display:none!important}.site-header-home{opacity:1!important;visibility:visible!important}`}</style>
         </noscript>
         <a className="skip-link" href="#main-content">Skip to content</a>
+        <FirstLoadScreen />
         <PageTransition />
         <MotionProvider />
         <ScrollExperience />

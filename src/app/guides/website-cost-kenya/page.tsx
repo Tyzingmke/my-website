@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { StructuredData } from "@/components/StructuredData";
 import { profile, serviceFamilies, services } from "@/data/site";
+import { ServicePreviewMockup } from "@/components/ServicePreviewMockup";
 
 const siteUrl = "https://www.tonyconsults.co.ke";
 
@@ -104,7 +104,7 @@ export default function WebsiteCostKenyaGuide() {
             {serviceFamilies.map((family) => (
               <article className={`service-family service-family-${family.accent}`} data-reveal key={`guide-${family.title}`}>
                 <div className="service-family-media">
-                  <Image src={family.image} alt={family.title} width={941} height={1672} sizes="(max-width: 900px) 100vw, 28vw" />
+                  <ServicePreviewMockup kind={family.preview} label={family.title} />
                   <div className="service-family-media-overlay">
                     <span>{family.label}</span>
                     <strong>{family.range}</strong>
@@ -122,7 +122,7 @@ export default function WebsiteCostKenyaGuide() {
                 </div>
                 <div className="tier-grid">
                   {family.tiers.map((tier) => (
-                    <article className="tier-card" key={`guide-${family.title}-${tier.name}`}>
+                    <article className={`tier-card${tier.name === "Gold" ? " tier-card-featured" : ""}`} key={`guide-${family.title}-${tier.name}`}>
                       <div className="tier-card-head">
                         <span>{tier.name}</span>
                         <strong>{tier.price}</strong>
