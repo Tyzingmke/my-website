@@ -29,6 +29,16 @@ export const metadata: Metadata = {
   category: "Web design and development",
   referrer: "strict-origin-when-cross-origin",
   robots: { index: true, follow: true },
+  manifest: `${basePath}/site.webmanifest`,
+  icons: {
+    icon: [
+      { url: `${basePath}/favicon.ico`, sizes: "48x48" },
+      { url: `${basePath}/favicon-96x96.png`, type: "image/png", sizes: "96x96" },
+      { url: `${basePath}/icon.svg`, type: "image/svg+xml", sizes: "any" },
+    ],
+    shortcut: [`${basePath}/favicon.ico`],
+    apple: [{ url: `${basePath}/apple-touch-icon.png`, type: "image/png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
     locale: "en_KE",
@@ -73,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         name: profile.brand,
         alternateName: "Antony DigitalWeb",
         url: `${siteUrl}/`,
-        logo: `${siteUrl}/icon.svg`,
+        logo: `${siteUrl}/web-app-manifest-512x512.png`,
         founder: { "@id": `${siteUrl}/#antony-mburu` },
         email: profile.email,
         telephone: profile.phoneHref,
