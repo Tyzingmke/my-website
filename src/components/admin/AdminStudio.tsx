@@ -47,7 +47,7 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/c
 type ConnectionState = "checking" | "setup" | "signed-out" | "ready" | "error";
 type ViewportMode = "desktop" | "tablet" | "mobile";
 type EditorMode = "blocks" | "code";
-type EditableBlockField = "label" | "eyebrow" | "heading" | "body" | "ctaLabel" | "ctaHref";
+type EditableBlockField = "label" | "eyebrow" | "heading" | "body" | "imageUrl" | "ctaLabel" | "ctaHref";
 
 const sectionItems: Array<{ id: AdminSection; label: string; icon: typeof LayoutDashboard; capability?: string }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -198,7 +198,10 @@ export function AdminStudio() {
       supabase.from("workspace_memberships").select("workspace_id, user_id, role, status, capabilities, profiles(display_name)").eq("workspace_id", activeMembership.workspace_id).order("created_at", { ascending: true }),
     ]);
     setSubmissions((inbox as FormSubmission[]) ?? []);
-    setMembers((workspaceMembers as unknown as WorkspaceMemberRecord[]) ?? []);
+    setMembers(((workspaceMembers ?? []) as Array<WorkspaceMemberRecord & { profiles?: { display_name: string | null }[] | { display_name: string | null } | null }>).map((member) => ({
+      ...member,
+      profiles: Array.isArray(member.profiles) ? member.profiles[0] ?? null : member.profiles ?? null,
+    })));
     if (cmsDocuments?.[0]) setSelectedId(cmsDocuments[0].id);
     setConnection("ready");
   }, []);
@@ -286,8 +289,9 @@ export function AdminStudio() {
       publish,
     } });
     setBusy(false);
-    if (error) {
-      setNotice(error.message.includes("0 rows") ? "This record changed elsewhere. Reload before saving." : error.message);
+    if (error || !data?.ok || !data.document) {
+      const message = data?.error ?? error?.message ?? "The CMS save did not return an updated document.";
+      setNotice(message.includes("0 rows") ? "This record changed elsewhere. Reload before saving." : message);
       return;
     }
     setDocuments((current) => current.map((document) => document.id === selected.id ? data.document as CmsDocument : document));
@@ -442,18 +446,19 @@ function StudioCanvas({ section, document, documents, siteEvents, submissions, a
 
 function PageCompositionPreview({ document, blocks }: { document: CmsDocument; blocks: CmsContentBlock[] }) {
   const hero = blocks.find((block) => block.type === "hero") ?? blocks[0];
-  return <article className="studio-page-preview"><span>{hero?.eyebrow ?? document.kind}</span><h2>{hero?.heading ?? document.title}</h2><p>{hero?.body ?? document.draft_body.summary ?? "Add a concise description."}</p>{blocks.slice(1, 4).map((block) => <section className={`studio-preview-block type-${block.type}`} key={block.id}><small>{block.label}</small><strong>{block.heading}</strong>{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <div>{block.items.slice(0, 3).map((item) => <span key={item}>{item}</span>)}</div> : null}</section>)}</article>;
+  return <article className="studio-page-preview">{hero?.imageUrl ? <img className="studio-preview-image" src={hero.imageUrl} alt="" /> : null}<span>{hero?.eyebrow ?? document.kind}</span><h2>{hero?.heading ?? document.title}</h2><p>{hero?.body ?? document.draft_body.summary ?? "Add a concise description."}</p>{blocks.slice(1, 4).map((block) => <section className={`studio-preview-block type-${block.type}`} key={block.id}>{block.imageUrl ? <img className="studio-preview-block-image" src={block.imageUrl} alt="" /> : null}<small>{block.label}</small><strong>{block.heading}</strong>{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <div>{block.items.slice(0, 3).map((item) => <span key={item}>{item}</span>)}</div> : null}</section>)}</article>;
 }
 
 function ContentBlockEditor({ block, index, readOnly, onUpdate, onItems, onRemove }: { block: CmsContentBlock; index: number; readOnly: boolean; onUpdate: (id: string, field: EditableBlockField, value: string) => void; onItems: (id: string, value: string) => void; onRemove: (id: string) => void }) {
-  return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
+  return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Image URL<input type="url" value={block.imageUrl ?? ""} placeholder="https://... or /images/..." disabled={readOnly} onChange={(event) => onUpdate(block.id, "imageUrl", event.target.value)} /></label><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
 }
 
 const codeGroups = [
-  { label: "Pages", files: ["src/app/page.tsx", "src/app/about/page.tsx", "src/app/work/page.tsx", "src/app/services/page.tsx", "src/app/contact/page.tsx", "src/app/website-design-kenya/page.tsx", "src/app/guides/website-cost-kenya/page.tsx"] },
-  { label: "Experience", files: ["src/components/PageTransition.tsx", "src/components/MotionProvider.tsx", "src/components/FirstLoadScreen.tsx", "src/components/ScrollExperience.tsx"] },
-  { label: "Chrome", files: ["src/components/Header.tsx", "src/components/Footer.tsx", "src/components/AppFrame.tsx", "src/components/admin/AdminStudio.tsx"] },
-  { label: "Design system", files: ["src/app/globals.css", "src/app/admin/studio.css", "src/data/site.ts", "src/app/layout.tsx"] },
+  { label: "Pages", files: ["src/app/page.tsx", "src/app/about/page.tsx", "src/app/work/page.tsx", "src/app/services/page.tsx", "src/app/contact/page.tsx", "src/app/website-design-kenya/page.tsx", "src/app/guides/website-cost-kenya/page.tsx", "src/app/[slug]/page.tsx", "src/app/not-found.tsx"] },
+  { label: "Motion and loading", files: ["src/components/PageTransition.tsx", "src/components/MotionProvider.tsx", "src/components/FirstLoadScreen.tsx", "src/components/ScrollExperience.tsx", "src/lib/performanceProfile.ts", "src/lib/scrollMemory.ts"] },
+  { label: "Images and forms", files: ["src/components/HeroTypingCards.tsx", "src/components/ServicePreviewMockup.tsx", "src/components/ContactForm.tsx", "src/components/CookieConsent.tsx"] },
+  { label: "Chrome and SEO", files: ["src/components/Header.tsx", "src/components/Footer.tsx", "src/components/AppFrame.tsx", "src/components/StructuredData.tsx", "src/components/SiteAnalytics.tsx", "src/app/layout.tsx", "src/app/sitemap.ts", "src/app/robots.ts"] },
+  { label: "Content and styling", files: ["src/data/site.ts", "src/lib/cms/public.ts", "src/app/globals.css", "src/app/admin/studio.css", "src/components/admin/AdminStudio.tsx"] },
 ] as const;
 
 function CodeWorkspace({ enabled, theme }: { enabled: boolean; theme: "dark" | "light" }) {
@@ -469,7 +474,7 @@ function CodeWorkspace({ enabled, theme }: { enabled: boolean; theme: "dark" | "
     if (!supabase || !enabled) return;
     setLoading(true);
     setMessage("");
-    const { data, error } = await supabase.functions.invoke("studio-code", { body: { action: "read", path } });
+    const { data, error } = await supabase.functions.invoke("studio-code-v2", { body: { action: "read", path } });
     setLoading(false);
     if (error || !data?.ok) {
       setMessage(data?.error ?? error?.message ?? "The secure code gateway is not ready yet.");
@@ -488,7 +493,7 @@ function CodeWorkspace({ enabled, theme }: { enabled: boolean; theme: "dark" | "
     if (!supabase || !enabled || !source || !sha) return;
     setSaving(true);
     setMessage("");
-    const { data, error } = await supabase.functions.invoke("studio-code", { body: { action: "write", path: file, content: source, sha, message: `Update ${file} from Tony Consults Studio` } });
+    const { data, error } = await supabase.functions.invoke("studio-code-v2", { body: { action: "write", path: file, content: source, sha, message: `Update ${file} from Tony Consults Studio` } });
     setSaving(false);
     if (error || !data?.ok) {
       setMessage(data?.error ?? error?.message ?? "The code update could not be published.");

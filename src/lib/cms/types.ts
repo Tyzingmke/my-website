@@ -10,6 +10,7 @@ export type CmsContentBlock = {
   eyebrow?: string;
   heading?: string;
   body?: string;
+  imageUrl?: string;
   items?: string[];
   ctaLabel?: string;
   ctaHref?: string;

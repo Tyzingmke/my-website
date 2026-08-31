@@ -5,10 +5,11 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2.112.4/cors";
 const repository = "Tyzingmke/my-website";
 const branch = "main";
 const allowedFiles = new Set([
-  "src/app/page.tsx", "src/app/about/page.tsx", "src/app/work/page.tsx", "src/app/services/page.tsx", "src/app/contact/page.tsx", "src/app/website-design-kenya/page.tsx", "src/app/guides/website-cost-kenya/page.tsx",
-  "src/components/PageTransition.tsx", "src/components/MotionProvider.tsx", "src/components/FirstLoadScreen.tsx", "src/components/ScrollExperience.tsx",
-  "src/components/Header.tsx", "src/components/Footer.tsx", "src/components/AppFrame.tsx", "src/components/admin/AdminStudio.tsx",
-  "src/app/globals.css", "src/app/admin/studio.css", "src/data/site.ts", "src/app/layout.tsx",
+  "src/app/page.tsx", "src/app/about/page.tsx", "src/app/work/page.tsx", "src/app/services/page.tsx", "src/app/contact/page.tsx", "src/app/website-design-kenya/page.tsx", "src/app/guides/website-cost-kenya/page.tsx", "src/app/[slug]/page.tsx", "src/app/not-found.tsx",
+  "src/components/PageTransition.tsx", "src/components/MotionProvider.tsx", "src/components/FirstLoadScreen.tsx", "src/components/ScrollExperience.tsx", "src/lib/performanceProfile.ts", "src/lib/scrollMemory.ts",
+  "src/components/HeroTypingCards.tsx", "src/components/ServicePreviewMockup.tsx", "src/components/ContactForm.tsx", "src/components/CookieConsent.tsx",
+  "src/components/Header.tsx", "src/components/Footer.tsx", "src/components/AppFrame.tsx", "src/components/StructuredData.tsx", "src/components/SiteAnalytics.tsx", "src/app/layout.tsx", "src/app/sitemap.ts", "src/app/robots.ts",
+  "src/data/site.ts", "src/lib/cms/public.ts", "src/app/globals.css", "src/app/admin/studio.css", "src/components/admin/AdminStudio.tsx",
 ]);
 
 const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });

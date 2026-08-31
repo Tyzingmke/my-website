@@ -43,7 +43,7 @@ export default async function CmsPublicPage({ params }: { params: Promise<{ slug
         </div>
       </div>
     </section>
-    {blocks.length ? <section className="section-band section-light"><div className="section-shell cms-public-blocks">{blocks.map((block) => <article data-reveal key={block.id}><p className="eyebrow">{block.label}</p>{block.heading ? <h2>{block.heading}</h2> : null}{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <ul>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : null}{block.ctaLabel && block.ctaHref ? <Link className="text-link" href={block.ctaHref}>{block.ctaLabel} <ArrowUpRight size={17} /></Link> : null}</article>)}</div></section> : null}
+    {blocks.length ? <section className="section-band section-light"><div className="section-shell cms-public-blocks">{blocks.map((block) => <article data-reveal key={block.id}>{block.imageUrl ? <img src={block.imageUrl} alt="" /> : null}<p className="eyebrow">{block.label}</p>{block.heading ? <h2>{block.heading}</h2> : null}{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <ul>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : null}{block.ctaLabel && block.ctaHref ? <Link className="text-link" href={block.ctaHref}>{block.ctaLabel} <ArrowUpRight size={17} /></Link> : null}</article>)}</div></section> : null}
     <section className="section-band section-dark"><div className="section-shell cta-band" data-reveal><p className="eyebrow">Have a similar goal?</p><h2>Let&apos;s build the useful version.</h2><Link className="button button-acid" href="/contact/">Start a conversation <ArrowRight size={18} /></Link></div></section>
   </>;
 }
