@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.4";
+import { corsHeaders } from "npm:@supabase/supabase-js@2.112.4/cors";
 
 const repository = "Tyzingmke/my-website";
 const branch = "main";
@@ -10,11 +11,12 @@ const allowedFiles = new Set([
   "src/app/globals.css", "src/app/admin/studio.css", "src/data/site.ts", "src/app/layout.tsx",
 ]);
 
-const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 const decode = (value: string) => new TextDecoder().decode(Uint8Array.from(atob(value.replace(/\n/g, "")), (character) => character.charCodeAt(0)));
 const encode = (value: string) => btoa(String.fromCharCode(...new TextEncoder().encode(value)));
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") return json({ ok: true });
   if (request.method !== "POST") return json({ ok: false, error: "Method not allowed." }, 405);
   const authorization = request.headers.get("Authorization");
   if (!authorization) return json({ ok: false, error: "Sign in is required." }, 401);
