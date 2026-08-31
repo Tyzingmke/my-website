@@ -21,7 +21,7 @@ export function ContactForm() {
     setSending(false);
     if (error || !data?.ok) { setMessage(data?.error ?? "Your message could not be sent. Please use WhatsApp or email."); return; }
     event.currentTarget.reset();
-    setMessage("Thank you. Your project message is now in the Tony Consults inbox.");
+    setMessage("Submitted successfully. Check your WhatsApp or email for my update.");
   };
 
   return <form className="contact-form" onSubmit={(event) => void submit(event)}>
@@ -31,6 +31,6 @@ export function ContactForm() {
     <label>Business or organisation<input name="company" autoComplete="organization" /></label>
     <label className="contact-form-wide">What do you need to build?<textarea name="message" required rows={5} /></label>
     <label className="contact-form-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
-    <div className="contact-form-actions"><button className="button button-acid" type="submit" disabled={sending}>{sending ? <LoaderCircle className="spin" size={18} /> : <ArrowUpRight size={18} />}Send project enquiry</button>{message ? <p><Check size={16} />{message}</p> : null}</div>
+    <div className="contact-form-actions"><button className="button button-acid" type="submit" disabled={sending}>{sending ? <LoaderCircle className="spin" size={18} /> : <ArrowUpRight size={18} />}Send project enquiry</button>{message ? <p role="status"><Check size={16} />{message}</p> : null}</div>
   </form>;
 }
