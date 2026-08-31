@@ -231,11 +231,20 @@
 .studio-inspector-note p { margin-top: 3px; color: var(--studio-muted); font-size: .65rem; }
 
 .studio-auth-wrap, .studio-centered { display: grid; min-height: 100%; place-items: center; padding: 24px; }
-.studio-auth-card { width: min(100%, 430px); display: grid; gap: 15px; padding: clamp(24px, 5vw, 42px); border: 1px solid var(--studio-line); background: var(--studio-panel); box-shadow: 0 40px 100px rgba(0, 0, 0, .25); }
-.studio-auth-card > small { color: var(--studio-accent); font-size: .68rem; font-weight: 800; text-transform: uppercase; }
-.studio-auth-card h1 { font-size: 2rem; }
-.studio-auth-card > p { color: var(--studio-muted); font-size: .76rem; }
-.studio-auth-icon { display: grid; width: 44px; height: 44px; place-items: center; background: var(--studio-accent); color: #242331; }
+.studio-auth-screen { display: grid; min-height: 100dvh; place-items: center; overflow: auto; background: var(--studio-bg); }
+.studio-auth-wrap { width: 100%; min-height: 100dvh; }
+.studio-auth-card { position: relative; width: min(100%, 450px); display: grid; gap: 16px; padding: clamp(28px, 5vw, 46px); border: 1px solid var(--studio-line-strong); background: color-mix(in srgb, var(--studio-panel) 94%, transparent); box-shadow: 0 40px 100px rgba(0, 0, 0, .35); backdrop-filter: blur(20px); }
+.studio-auth-brand { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--studio-line); }
+.studio-auth-brand > div { display: grid; gap: 1px; }
+.studio-auth-brand small, .studio-auth-kicker { color: var(--studio-muted); font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.studio-auth-brand strong { font-size: .9rem; }
+.studio-auth-card h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
+.studio-auth-card > p { color: var(--studio-muted); font-size: .8rem; line-height: 1.55; }
+.studio-auth-icon { display: grid; width: 48px; height: 48px; margin-top: 7px; place-items: center; background: var(--studio-accent); color: #242331; }
+.studio-auth-card label { display: grid; gap: 7px; color: var(--studio-muted); font-size: .69rem; font-weight: 800; }
+.studio-auth-card input { min-height: 43px; }
+.studio-auth-footnote { display: inline-flex; align-items: center; gap: 6px; color: var(--studio-muted); font-size: .65rem; }
+.studio-auth-footnote svg { width: 14px; color: var(--studio-good); }
 .studio-alert { padding: 10px; border: 1px solid color-mix(in srgb, var(--studio-danger) 45%, transparent); background: color-mix(in srgb, var(--studio-danger) 8%, transparent); color: var(--studio-danger); font-size: .7rem; }
 .studio-text-button { width: fit-content; justify-self: start; padding: 0; border: 0; background: transparent; color: var(--studio-accent); font-size: .72rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .studio-centered { align-content: center; text-align: center; }

@@ -123,7 +123,6 @@ export function AdminStudio() {
   const [connection, setConnection] = useState<ConnectionState>(configured ? "checking" : "setup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState<"sign-in" | "create">("sign-in");
   const [authMessage, setAuthMessage] = useState("");
   const [membership, setMembership] = useState<WorkspaceMembership | null>(null);
   const [documents, setDocuments] = useState<CmsDocument[]>(previewDocuments);
@@ -212,26 +211,6 @@ export function AdminStudio() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) setAuthMessage(error.message);
-  }
-
-  async function handleCreateAccount(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-    setBusy(true);
-    setAuthMessage("");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: "Antony Mburu" } },
-    });
-    setBusy(false);
-    if (error) {
-      setAuthMessage(error.message);
-      return;
-    }
-    setAuthMessage(data.session ? "Owner account created. You can sign in now." : "Check your email and confirm the account, then return here to sign in.");
-    setAuthMode("sign-in");
   }
 
   async function handleSignOut() {
@@ -328,6 +307,12 @@ export function AdminStudio() {
     if (nextDocument) setSelectedId(nextDocument.id);
   }
 
+  if (connection === "signed-out" || connection === "error") {
+    return <div className={`tony-studio studio-theme-${theme} studio-auth-screen`} data-connection={connection}>
+      <LoginState email={email} password={password} message={authMessage} busy={busy} onEmail={setEmail} onPassword={setPassword} onSubmit={handleSignIn} />
+    </div>;
+  }
+
   return (
     <div className={`tony-studio studio-theme-${theme}`} data-connection={connection}>
       <header className="studio-commandbar">
@@ -338,7 +323,7 @@ export function AdminStudio() {
         </div>
         <div className="studio-command-center">
           <button className="studio-icon" type="button" aria-label={leftOpen ? "Close navigator" : "Open navigator"} onClick={() => setLeftOpen((value) => !value)}><PanelLeftClose /></button>
-          <span className={`studio-status status-${connection}`}><i />{connection === "ready" ? "Synced" : connection === "setup" ? "Setup needed" : connection === "signed-out" ? "Signed out" : connection === "checking" ? "Connecting" : "Attention"}</span>
+          <span className={`studio-status status-${connection}`}><i />{connection === "ready" ? "Synced" : connection === "setup" ? "Setup needed" : connection === "checking" ? "Connecting" : "Attention"}</span>
           <div className="studio-breakpoints" aria-label="Preview size">
             <button className={viewport === "desktop" ? "active" : ""} type="button" aria-label="Desktop preview" onClick={() => setViewport("desktop")}><Monitor /></button>
             <button className={viewport === "tablet" ? "active" : ""} type="button" aria-label="Tablet preview" onClick={() => setViewport("tablet")}><BookOpen /></button>
@@ -371,7 +356,6 @@ export function AdminStudio() {
         <main className="studio-canvas-area">
           {connection === "checking" ? <CenteredState icon={LoaderCircle} spin title="Opening your workspace" body="Checking the local session and secure workspace membership." /> : null}
           {connection === "setup" ? <SetupState /> : null}
-          {connection === "signed-out" || connection === "error" ? <LoginState email={email} password={password} message={authMessage} busy={busy} mode={authMode} onEmail={setEmail} onPassword={setPassword} onSubmit={authMode === "sign-in" ? handleSignIn : handleCreateAccount} onModeChange={setAuthMode} /> : null}
           {connection === "ready" || connection === "setup" ? <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
         </main>
 
@@ -389,9 +373,8 @@ function SetupState() {
   return <div className="studio-setup-banner"><CloudOff /><div><strong>Supabase is not connected yet</strong><p>This is a read-only preview built from the current portfolio content. Add the two public values from <code>.env.example</code> after creating the dedicated Tony Consults project.</p></div><span>Private by default</span></div>;
 }
 
-function LoginState({ email, password, message, busy, mode, onEmail, onPassword, onSubmit, onModeChange }: { email: string; password: string; message: string; busy: boolean; mode: "sign-in" | "create"; onEmail: (value: string) => void; onPassword: (value: string) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onModeChange: (mode: "sign-in" | "create") => void }) {
-  const creating = mode === "create";
-  return <div className="studio-auth-wrap"><form className="studio-auth-card" onSubmit={onSubmit}><span className="studio-auth-icon"><LockKeyhole /></span><small>Private workspace</small><h1>{creating ? "Create your owner access" : "Tony Consults Studio"}</h1><p>{creating ? "Only the approved Tony Consults owner email is granted administration. Other sign-ups cannot access this workspace." : "Sign in with your owner or invited administrator account."}</p><label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => onEmail(event.target.value)} required /></label><label>Password<input type="password" minLength={8} autoComplete={creating ? "new-password" : "current-password"} value={password} onChange={(event) => onPassword(event.target.value)} required /></label>{message ? <div className="studio-alert">{message}</div> : null}<button className="studio-button primary wide" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ShieldCheck />}{creating ? "Create owner account" : "Sign in securely"}</button><button className="studio-text-button" type="button" onClick={() => { onModeChange(creating ? "sign-in" : "create"); }}>{creating ? "I already have an account" : "Create owner account"}</button></form></div>;
+function LoginState({ email, password, message, busy, onEmail, onPassword, onSubmit }: { email: string; password: string; message: string; busy: boolean; onEmail: (value: string) => void; onPassword: (value: string) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <main className="studio-auth-wrap"><form className="studio-auth-card" onSubmit={onSubmit}><div className="studio-auth-brand"><span className="studio-mark" aria-hidden="true">TC</span><div><small>Tony Consults</small><strong>Studio</strong></div></div><span className="studio-auth-icon"><LockKeyhole /></span><small className="studio-auth-kicker">Private workspace</small><h1>Welcome back.</h1><p>Sign in to manage pages, projects, services, and publishing for Tony Consults.</p><label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => onEmail(event.target.value)} required /></label><label>Password<input type="password" minLength={8} autoComplete="current-password" value={password} onChange={(event) => onPassword(event.target.value)} required /></label>{message ? <div className="studio-alert">{message}</div> : null}<button className="studio-button primary wide" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ShieldCheck />}Sign in to Studio</button><span className="studio-auth-footnote"><ShieldCheck /> Secured with workspace access control</span></form></main>;
 }
 
 function StudioCanvas({ section, document, viewport, readOnly, notice, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; viewport: ViewportMode; readOnly: boolean; notice: string; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
