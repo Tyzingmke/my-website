@@ -41,11 +41,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { projects, services } from "@/data/site";
-import type { AdminSection, CmsDocument, CmsDocumentKind, WorkspaceMembership } from "@/lib/cms/types";
+import type { AdminSection, CmsContentBlock, CmsContentBlockType, CmsDocument, CmsDocumentBody, CmsDocumentKind, WorkspaceMembership } from "@/lib/cms/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 type ConnectionState = "checking" | "setup" | "signed-out" | "ready" | "error";
 type ViewportMode = "desktop" | "tablet" | "mobile";
+type EditorMode = "blocks" | "code";
+type EditableBlockField = "label" | "eyebrow" | "heading" | "body" | "ctaLabel" | "ctaHref";
 
 const sectionItems: Array<{ id: AdminSection; label: string; icon: typeof LayoutDashboard; capability?: string }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -78,6 +80,42 @@ function kindForSection(section: AdminSection): CmsDocumentKind | null {
   if (section === "projects") return "project";
   if (section === "services") return "service";
   return null;
+}
+
+const BLOCK_TITLES: Record<CmsContentBlockType, string> = {
+  hero: "Hero",
+  story: "Editorial section",
+  collection: "Content collection",
+  features: "Feature list",
+  cta: "Call to action",
+  details: "Details",
+};
+
+function fallbackBlocks(document: CmsDocument): CmsContentBlock[] {
+  const body = document.draft_body;
+  const hero: CmsContentBlock = {
+    id: "hero",
+    type: "hero",
+    label: "Hero",
+    eyebrow: String(body.eyebrow ?? document.kind),
+    heading: document.title,
+    body: String(body.summary ?? ""),
+    ctaLabel: String(body.ctaLabel ?? "Get in touch"),
+    ctaHref: String(body.ctaHref ?? "/contact/"),
+  };
+  const detail: CmsContentBlock = {
+    id: "details",
+    type: "details",
+    label: "Details",
+    heading: "What this page says",
+    body: String(body.body ?? "Add the supporting content for this page."),
+  };
+  return [hero, detail];
+}
+
+function documentBlocks(document: CmsDocument) {
+  const blocks = document.draft_body.blocks;
+  return Array.isArray(blocks) && blocks.length ? blocks : fallbackBlocks(document);
 }
 
 export function AdminStudio() {
@@ -213,6 +251,11 @@ export function AdminStudio() {
     }));
   }
 
+  function updateSelectedBody(nextBody: CmsDocumentBody) {
+    if (!selected || isReadOnly) return;
+    setDocuments((current) => current.map((document) => document.id === selected.id ? { ...document, draft_body: nextBody } : document));
+  }
+
   async function saveSelected(publish = false) {
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !selected || isReadOnly) return;
@@ -329,7 +372,7 @@ export function AdminStudio() {
           {connection === "checking" ? <CenteredState icon={LoaderCircle} spin title="Opening your workspace" body="Checking the local session and secure workspace membership." /> : null}
           {connection === "setup" ? <SetupState /> : null}
           {connection === "signed-out" || connection === "error" ? <LoginState email={email} password={password} message={authMessage} busy={busy} mode={authMode} onEmail={setEmail} onPassword={setPassword} onSubmit={authMode === "sign-in" ? handleSignIn : handleCreateAccount} onModeChange={setAuthMode} /> : null}
-          {connection === "ready" || connection === "setup" ? <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
+          {connection === "ready" || connection === "setup" ? <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
         </main>
 
         <aside className="studio-inspector">
@@ -351,11 +394,49 @@ function LoginState({ email, password, message, busy, mode, onEmail, onPassword,
   return <div className="studio-auth-wrap"><form className="studio-auth-card" onSubmit={onSubmit}><span className="studio-auth-icon"><LockKeyhole /></span><small>Private workspace</small><h1>{creating ? "Create your owner access" : "Tony Consults Studio"}</h1><p>{creating ? "Only the approved Tony Consults owner email is granted administration. Other sign-ups cannot access this workspace." : "Sign in with your owner or invited administrator account."}</p><label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => onEmail(event.target.value)} required /></label><label>Password<input type="password" minLength={8} autoComplete={creating ? "new-password" : "current-password"} value={password} onChange={(event) => onPassword(event.target.value)} required /></label>{message ? <div className="studio-alert">{message}</div> : null}<button className="studio-button primary wide" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ShieldCheck />}{creating ? "Create owner account" : "Sign in securely"}</button><button className="studio-text-button" type="button" onClick={() => { onModeChange(creating ? "sign-in" : "create"); }}>{creating ? "I already have an account" : "Create owner account"}</button></form></div>;
 }
 
-function StudioCanvas({ section, document, viewport, readOnly, notice, onUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; viewport: ViewportMode; readOnly: boolean; notice: string; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onSave: () => void; onPublish: () => void }) {
+function StudioCanvas({ section, document, viewport, readOnly, notice, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; viewport: ViewportMode; readOnly: boolean; notice: string; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
+  const [mode, setMode] = useState<EditorMode>("blocks");
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState("");
   const editorial = kindForSection(section);
+  const blocks = document ? documentBlocks(document) : [];
+
+  useEffect(() => {
+    if (!document) return;
+    setCode(JSON.stringify(document.draft_body, null, 2));
+    setCodeError("");
+  }, [document?.id]);
+
   if (!editorial) return <OperationsDashboard section={section} />;
   if (!document) return <CenteredState icon={Archive} title="Nothing selected" body="Choose a record from the navigator or create a new one." />;
-  return <div className="studio-editor"><div className="studio-editor-heading"><div><small>{document.kind} editor</small><h1>{document.title}</h1></div><div className="studio-editor-actions"><span className={`studio-pill status-${document.status}`}>{document.status}</span><button className="studio-button secondary" disabled={readOnly} onClick={onSave}><Save /> Save draft</button><button className="studio-button primary" disabled={readOnly} onClick={onPublish}><Rocket /> Publish</button></div></div>{notice ? <div className="studio-notice"><Check />{notice}</div> : null}<div className={`studio-preview-frame viewport-${viewport}`}><div className="studio-preview-toolbar"><i /><i /><i /><span>tonyconsults.co.ke/{document.slug}</span></div><article className="studio-page-preview"><span>{String(document.draft_body.eyebrow ?? document.kind)}</span><h2>{document.title}</h2><p>{String(document.draft_body.summary ?? "Add a concise description in the inspector fields below.")}</p><div className="studio-preview-media"><span>Live composition preview</span></div></article></div><section className="studio-fields"><div className="studio-section-heading"><div><small>Content</small><h2>Core fields</h2></div><span>Version {document.version}</span></div><div className="studio-field-grid"><label>Title<input value={document.title} disabled={readOnly} onChange={(event) => onUpdate("title", event.target.value)} /></label><label>URL slug<input value={document.slug} disabled={readOnly} onChange={(event) => onUpdate("slug", event.target.value)} /></label><label className="field-wide">Summary<textarea rows={3} value={String(document.draft_body.summary ?? "")} disabled={readOnly} onChange={(event) => onUpdate("summary", event.target.value)} /></label><label className="field-wide">Body<textarea rows={8} value={String(document.draft_body.body ?? "")} disabled={readOnly} onChange={(event) => onUpdate("body", event.target.value)} /></label></div></section></div>;
+
+  const updateBlocks = (nextBlocks: CmsContentBlock[]) => onBodyUpdate({ ...document.draft_body, blocks: nextBlocks });
+  const updateBlock = (id: string, field: EditableBlockField, value: string) => updateBlocks(blocks.map((block) => block.id === id ? { ...block, [field]: value } : block));
+  const updateItems = (id: string, value: string) => updateBlocks(blocks.map((block) => block.id === id ? { ...block, items: value.split("\n").map((item) => item.trim()).filter(Boolean) } : block));
+  const addBlock = (type: CmsContentBlockType) => updateBlocks([...blocks, { id: `${type}-${Date.now().toString(36)}`, type, label: BLOCK_TITLES[type], heading: `New ${BLOCK_TITLES[type]}`, body: "Add the content for this section." }]);
+  const removeBlock = (id: string) => updateBlocks(blocks.filter((block) => block.id !== id));
+  const applyCode = () => {
+    try {
+      const parsed = JSON.parse(code) as CmsDocumentBody;
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Use one JSON object for this page.");
+      onBodyUpdate(parsed);
+      setCode(JSON.stringify(parsed, null, 2));
+      setCodeError("");
+    } catch (error) {
+      setCodeError(error instanceof Error ? error.message : "This is not valid page JSON.");
+    }
+  };
+
+  return <div className="studio-editor"><div className="studio-editor-heading"><div><small>{document.kind} editor</small><h1>{document.title}</h1><p>Build the same editorial structure used by the public page. Changes update this preview immediately and are saved as a revision.</p></div><div className="studio-editor-actions"><span className={`studio-pill status-${document.status}`}>{document.status}</span><button className="studio-button secondary" disabled={readOnly} onClick={onSave}><Save /> Save draft</button><button className="studio-button primary" disabled={readOnly} onClick={onPublish}><Rocket /> Publish</button></div></div>{notice ? <div className="studio-notice"><Check />{notice}</div> : null}<div className="studio-mode-switch" role="tablist" aria-label="Editing mode"><button className={mode === "blocks" ? "active" : ""} type="button" role="tab" aria-selected={mode === "blocks"} onClick={() => setMode("blocks")}><LayoutDashboard /> Visual blocks</button><button className={mode === "code" ? "active" : ""} type="button" role="tab" aria-selected={mode === "code"} onClick={() => { setCode(JSON.stringify(document.draft_body, null, 2)); setCodeError(""); setMode("code"); }}><Code2 /> Content JSON</button></div><div className={`studio-preview-frame viewport-${viewport}`}><div className="studio-preview-toolbar"><i /><i /><i /><span>tonyconsults.co.ke/{document.slug}</span></div><PageCompositionPreview document={document} blocks={blocks} /></div>{mode === "blocks" ? <section className="studio-block-editor"><div className="studio-section-heading"><div><small>Page composition</small><h2>Editable sections</h2></div><span>{blocks.length} blocks</span></div><div className="studio-page-basics"><label>Page title<input value={document.title} disabled={readOnly} onChange={(event) => onUpdate("title", event.target.value)} /></label><label>URL slug<input value={document.slug} disabled={readOnly} onChange={(event) => onUpdate("slug", event.target.value)} /></label></div><div className="studio-block-list">{blocks.map((block, index) => <ContentBlockEditor block={block} index={index} readOnly={readOnly} onUpdate={updateBlock} onItems={updateItems} onRemove={removeBlock} />)}</div><div className="studio-add-blocks"><span>Add a section</span>{(Object.keys(BLOCK_TITLES) as CmsContentBlockType[]).map((type) => <button key={type} type="button" disabled={readOnly} onClick={() => addBlock(type)}><Plus /> {BLOCK_TITLES[type]}</button>)}</div></section> : <section className="studio-code-editor"><div className="studio-section-heading"><div><small>Advanced editing</small><h2>Page content JSON</h2></div><span>Layout code stays protected</span></div><p>Use this for exact content changes, links, and block settings. It edits the same data as the visual blocks, not the website source code.</p><textarea spellCheck={false} value={code} disabled={readOnly} onChange={(event) => { setCode(event.target.value); setCodeError(""); }} /><div className="studio-code-actions"><small>{codeError || "Valid JSON is applied only when you choose Apply changes."}</small><button className="studio-button secondary" type="button" disabled={readOnly} onClick={applyCode}><Code2 /> Apply changes</button></div></section>}</div>;
+}
+
+function PageCompositionPreview({ document, blocks }: { document: CmsDocument; blocks: CmsContentBlock[] }) {
+  const hero = blocks.find((block) => block.type === "hero") ?? blocks[0];
+  return <article className="studio-page-preview"><span>{hero?.eyebrow ?? document.kind}</span><h2>{hero?.heading ?? document.title}</h2><p>{hero?.body ?? document.draft_body.summary ?? "Add a concise description."}</p>{blocks.slice(1, 4).map((block) => <section className={`studio-preview-block type-${block.type}`} key={block.id}><small>{block.label}</small><strong>{block.heading}</strong>{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <div>{block.items.slice(0, 3).map((item) => <span key={item}>{item}</span>)}</div> : null}</section>)}</article>;
+}
+
+function ContentBlockEditor({ block, index, readOnly, onUpdate, onItems, onRemove }: { block: CmsContentBlock; index: number; readOnly: boolean; onUpdate: (id: string, field: EditableBlockField, value: string) => void; onItems: (id: string, value: string) => void; onRemove: (id: string) => void }) {
+  return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
 }
 
 function OperationsDashboard({ section }: { section: AdminSection }) {

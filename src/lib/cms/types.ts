@@ -1,6 +1,20 @@
 export type CmsDocumentKind = "page" | "project" | "service" | "site_settings";
 export type CmsDocumentStatus = "draft" | "review" | "published" | "archived";
 
+export type CmsContentBlockType = "hero" | "story" | "collection" | "features" | "cta" | "details";
+
+export type CmsContentBlock = {
+  id: string;
+  type: CmsContentBlockType;
+  label: string;
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  items?: string[];
+  ctaLabel?: string;
+  ctaHref?: string;
+};
+
 export type CmsDocumentBody = {
   eyebrow?: string;
   summary?: string;
@@ -9,6 +23,7 @@ export type CmsDocumentBody = {
   ctaLabel?: string;
   ctaHref?: string;
   featured?: boolean;
+  blocks?: CmsContentBlock[];
   [key: string]: unknown;
 };
 
