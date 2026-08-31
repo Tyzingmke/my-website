@@ -52,6 +52,7 @@ export type WorkspaceMembership = {
 export type AdminSection =
   | "overview"
   | "content"
+  | "code"
   | "projects"
   | "services"
   | "inbox"

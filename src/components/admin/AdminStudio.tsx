@@ -52,6 +52,7 @@ type EditableBlockField = "label" | "eyebrow" | "heading" | "body" | "ctaLabel" 
 const sectionItems: Array<{ id: AdminSection; label: string; icon: typeof LayoutDashboard; capability?: string }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "content", label: "Pages", icon: FileText, capability: "page.read" },
+  { id: "code", label: "Code", icon: Code2, capability: "integration.manage" },
   { id: "projects", label: "Projects", icon: FolderKanban, capability: "page.read" },
   { id: "services", label: "Services", icon: Wrench, capability: "page.read" },
   { id: "inbox", label: "Inbox", icon: Inbox, capability: "form.read" },
@@ -356,7 +357,7 @@ export function AdminStudio() {
         <main className="studio-canvas-area">
           {connection === "checking" ? <CenteredState icon={LoaderCircle} spin title="Opening your workspace" body="Checking the local session and secure workspace membership." /> : null}
           {connection === "setup" ? <SetupState /> : null}
-          {connection === "ready" || connection === "setup" ? <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
+          {connection === "ready" || connection === "setup" ? section === "code" ? <CodeWorkspace enabled={connection === "ready" && hasCapability(membership, "integration.manage")} /> : <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
         </main>
 
         <aside className="studio-inspector">
@@ -422,9 +423,61 @@ function ContentBlockEditor({ block, index, readOnly, onUpdate, onItems, onRemov
   return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
 }
 
+const codeGroups = [
+  { label: "Pages", files: ["src/app/page.tsx", "src/app/about/page.tsx", "src/app/work/page.tsx", "src/app/services/page.tsx", "src/app/contact/page.tsx", "src/app/website-design-kenya/page.tsx", "src/app/guides/website-cost-kenya/page.tsx"] },
+  { label: "Experience", files: ["src/components/PageTransition.tsx", "src/components/MotionProvider.tsx", "src/components/FirstLoadScreen.tsx", "src/components/ScrollExperience.tsx"] },
+  { label: "Chrome", files: ["src/components/Header.tsx", "src/components/Footer.tsx", "src/components/AppFrame.tsx", "src/components/admin/AdminStudio.tsx"] },
+  { label: "Design system", files: ["src/app/globals.css", "src/app/admin/studio.css", "src/data/site.ts", "src/app/layout.tsx"] },
+] as const;
+
+function CodeWorkspace({ enabled }: { enabled: boolean }) {
+  const [file, setFile] = useState<string>(codeGroups[0].files[0]);
+  const [source, setSource] = useState("");
+  const [sha, setSha] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("Choose a file to load its current production source.");
+
+  const loadFile = useCallback(async (path: string) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !enabled) return;
+    setLoading(true);
+    setMessage("");
+    const { data, error } = await supabase.functions.invoke("studio-code", { body: { action: "read", path } });
+    setLoading(false);
+    if (error || !data?.ok) {
+      setMessage(data?.error ?? error?.message ?? "The secure code gateway is not ready yet.");
+      return;
+    }
+    setFile(path);
+    setSource(data.content);
+    setSha(data.sha);
+    setMessage(`Loaded ${path}`);
+  }, [enabled]);
+
+  useEffect(() => { void loadFile(file); }, [file, loadFile]);
+
+  const saveFile = async () => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !enabled || !source || !sha) return;
+    setSaving(true);
+    setMessage("");
+    const { data, error } = await supabase.functions.invoke("studio-code", { body: { action: "write", path: file, content: source, sha, message: `Update ${file} from Tony Consults Studio` } });
+    setSaving(false);
+    if (error || !data?.ok) {
+      setMessage(data?.error ?? error?.message ?? "The code update could not be published.");
+      return;
+    }
+    setSha(data.sha);
+    setMessage("Saved to GitHub. The Pages deployment has started.");
+  };
+
+  return <div className="studio-code-workspace"><div className="studio-editor-heading"><div><small>Code workspace</small><h1>Design and page code</h1><p>Edit the real source that powers the public pages, header, footer, motion and dashboard. Each save creates a GitHub commit and starts the Pages deployment.</p></div><span className="studio-pill">Protected gateway</span></div><div className="studio-code-layout"><aside className="studio-code-tree">{codeGroups.map((group) => <section key={group.label}><small>{group.label}</small>{group.files.map((path) => <button className={path === file ? "active" : ""} type="button" key={path} onClick={() => setFile(path)}><Code2 /><span>{path.split("/").pop()}</span></button>)}</section>)}</aside><section className="studio-code-surface"><header><span>{file}</span><div><button className="studio-button secondary" type="button" disabled={loading || saving} onClick={() => void loadFile(file)}><Cloud /> Reload</button><button className="studio-button primary" type="button" disabled={!enabled || loading || saving || !sha} onClick={() => void saveFile()}>{saving ? <LoaderCircle className="spin" /> : <Save />} Save & deploy</button></div></header>{!enabled ? <div className="studio-code-gateway-note"><LockKeyhole /><div><strong>Owner access required</strong><p>Code editing is available only to an authenticated owner with integration permission.</p></div></div> : null}<textarea aria-label={`Source for ${file}`} spellCheck={false} value={source} disabled={!enabled || loading} onChange={(event) => setSource(event.target.value)} placeholder={loading ? "Loading source..." : "Select a source file from the workspace."} />{message ? <footer><span>{message}</span><small>GitHub commits are versioned and can be rolled back there.</small></footer> : null}</section></div></div>;
+}
+
 function OperationsDashboard({ section }: { section: AdminSection }) {
   const labels: Record<AdminSection, [string, string]> = {
-    overview: ["Operational overview", "Content, enquiries and publishing health in one calm view."], content: ["Pages", ""], projects: ["Projects", ""], services: ["Services", ""], inbox: ["Enquiry inbox", "Form submissions with assignment and status tracking."], assets: ["Asset library", "Workspace-scoped media with searchable metadata."], users: ["People and access", "Invite administrators and assign capabilities without sharing credentials."], publish: ["Release control", "Review draft changes and publish from an auditable state."], audit: ["Audit trail", "An immutable record of important administrative actions."], settings: ["Workspace settings", "Brand, integrations, SEO and delivery configuration."],
+    overview: ["Operational overview", "Content, enquiries and publishing health in one calm view."], content: ["Pages", ""], code: ["Code workspace", ""], projects: ["Projects", ""], services: ["Services", ""], inbox: ["Enquiry inbox", "Form submissions with assignment and status tracking."], assets: ["Asset library", "Workspace-scoped media with searchable metadata."], users: ["People and access", "Invite administrators and assign capabilities without sharing credentials."], publish: ["Release control", "Review draft changes and publish from an auditable state."], audit: ["Audit trail", "An immutable record of important administrative actions."], settings: ["Workspace settings", "Brand, integrations, SEO and delivery configuration."],
   };
   const [title, body] = labels[section];
   const cards = section === "overview" ? [["12", "Published records"], ["3", "Draft changes"], ["0", "Failed releases"], ["100%", "Policy coverage"]] : [["Ready", "Database schema"], ["RLS", "Access control"], ["Tracked", "Audit events"], ["Scoped", "Workspace data"]];
