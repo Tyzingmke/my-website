@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Clock3, Mail, MapPin, MessageCircle } from "lucide-react";
 import { profile } from "@/data/site";
+import { ContactForm } from "@/components/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Tony Consults",
@@ -22,6 +23,13 @@ export default function ContactPage() {
             <h1>Tell me what<br />needs to work.</h1>
           </div>
           <p className="contact-intro" data-reveal>A good first message does not need to be formal. Share the business, the audience and the result you want the website to produce.</p>
+        </div>
+      </section>
+
+      <section className="contact-form-section section-band section-light">
+        <div className="section-shell contact-form-layout" data-reveal>
+          <div><p className="eyebrow">Project enquiry</p><h2>Send the<br />useful version.</h2><p>Your message appears in my private Studio inbox. WhatsApp and email remain available for urgent or detailed conversations.</p></div>
+          <ContactForm />
         </div>
       </section>
 

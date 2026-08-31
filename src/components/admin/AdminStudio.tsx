@@ -39,9 +39,9 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { projects, services } from "@/data/site";
-import type { AdminSection, CmsContentBlock, CmsContentBlockType, CmsDocument, CmsDocumentBody, CmsDocumentKind, WorkspaceMembership } from "@/lib/cms/types";
+import type { AdminSection, AuditEvent, CmsContentBlock, CmsContentBlockType, CmsDocument, CmsDocumentBody, CmsDocumentKind, FormSubmission, SiteEvent, WorkspaceMemberRecord, WorkspaceMembership } from "@/lib/cms/types";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 type ConnectionState = "checking" | "setup" | "signed-out" | "ready" | "error";
@@ -57,6 +57,7 @@ const sectionItems: Array<{ id: AdminSection; label: string; icon: typeof Layout
   { id: "services", label: "Services", icon: Wrench, capability: "page.read" },
   { id: "inbox", label: "Inbox", icon: Inbox, capability: "form.read" },
   { id: "assets", label: "Assets", icon: Image, capability: "asset.manage" },
+  { id: "analytics", label: "Analytics", icon: BarChart3, capability: "audit.read" },
   { id: "users", label: "Users", icon: Users, capability: "user.manage" },
   { id: "publish", label: "Publish", icon: Rocket, capability: "page.publish" },
   { id: "audit", label: "Audit", icon: Activity, capability: "audit.read" },
@@ -127,6 +128,10 @@ export function AdminStudio() {
   const [authMessage, setAuthMessage] = useState("");
   const [membership, setMembership] = useState<WorkspaceMembership | null>(null);
   const [documents, setDocuments] = useState<CmsDocument[]>(previewDocuments);
+  const [siteEvents, setSiteEvents] = useState<SiteEvent[]>([]);
+  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [members, setMembers] = useState<WorkspaceMemberRecord[]>([]);
   const [section, setSection] = useState<AdminSection>("overview");
   const [selectedId, setSelectedId] = useState(previewDocuments[0].id);
   const [leftOpen, setLeftOpen] = useState(true);
@@ -177,6 +182,23 @@ export function AdminStudio() {
     }
 
     setDocuments((cmsDocuments as CmsDocument[]) ?? []);
+    const { data: latestAudit, error: auditError } = await supabase
+      .from("audit_events")
+      .select("id, workspace_id, actor_id, action, entity_type, entity_id, metadata, created_at")
+      .eq("workspace_id", activeMembership.workspace_id)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (!auditError) {
+      const audit = (latestAudit as AuditEvent[]) ?? [];
+      setAuditEvents(audit);
+      setSiteEvents(audit.filter((event) => event.action === "site.page_view").map((event) => ({ id: event.id, workspace_id: event.workspace_id, event_type: "page_view", page_path: String(event.metadata.page_path ?? "/"), visitor_id: event.entity_id ?? "unknown", created_at: event.created_at })));
+    }
+    const [{ data: inbox }, { data: workspaceMembers }] = await Promise.all([
+      supabase.from("form_submissions").select("id, workspace_id, form_key, status, payload, source_url, created_at").eq("workspace_id", activeMembership.workspace_id).order("created_at", { ascending: false }).limit(100),
+      supabase.from("workspace_memberships").select("workspace_id, user_id, role, status, capabilities, profiles(display_name)").eq("workspace_id", activeMembership.workspace_id).order("created_at", { ascending: true }),
+    ]);
+    setSubmissions((inbox as FormSubmission[]) ?? []);
+    setMembers((workspaceMembers as unknown as WorkspaceMemberRecord[]) ?? []);
     if (cmsDocuments?.[0]) setSelectedId(cmsDocuments[0].id);
     setConnection("ready");
   }, []);
@@ -219,6 +241,10 @@ export function AdminStudio() {
     await supabase?.auth.signOut();
     setMembership(null);
     setDocuments(previewDocuments);
+    setSiteEvents([]);
+    setSubmissions([]);
+    setAuditEvents([]);
+    setMembers([]);
     setConnection("signed-out");
   }
 
@@ -252,20 +278,20 @@ export function AdminStudio() {
       status: publish ? "published" : selected.status,
       ...(publish ? { published_body: selected.draft_body, published_at: new Date().toISOString() } : {}),
     };
-    const { data, error } = await supabase
-      .from("cms_documents")
-      .update(payload)
-      .eq("id", selected.id)
-      .eq("version", selected.version)
-      .select("id, workspace_id, kind, slug, title, status, schema_version, draft_body, published_body, version, updated_at, published_at")
-      .single();
+    const { data, error } = await supabase.functions.invoke("studio-cms", { body: {
+      action: "save-document",
+      id: selected.id,
+      version: selected.version,
+      ...payload,
+      publish,
+    } });
     setBusy(false);
     if (error) {
       setNotice(error.message.includes("0 rows") ? "This record changed elsewhere. Reload before saving." : error.message);
       return;
     }
-    setDocuments((current) => current.map((document) => document.id === selected.id ? data as CmsDocument : document));
-    setNotice(publish ? "Content approved in the CMS. Configure the GitHub delivery gateway before treating it as a live-site release." : "Draft saved with a new revision.");
+    setDocuments((current) => current.map((document) => document.id === selected.id ? data.document as CmsDocument : document));
+    setNotice(publish ? "Published in the CMS. The next GitHub Pages build generates its public route." : "Draft saved and recorded in the workspace audit trail.");
   }
 
   async function createDocument() {
@@ -319,7 +345,7 @@ export function AdminStudio() {
       <header className="studio-commandbar">
         <div className="studio-command-brand">
           <button className="studio-icon mobile-only" type="button" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}><Menu /></button>
-          <span className="studio-mark" aria-hidden="true">TC</span>
+          <span className="studio-mark" aria-hidden="true"><img src="/icon.svg" alt="" /></span>
           <span><small>Studio</small><strong>{workspaceName}</strong></span>
         </div>
         <div className="studio-command-center">
@@ -357,7 +383,7 @@ export function AdminStudio() {
         <main className="studio-canvas-area">
           {connection === "checking" ? <CenteredState icon={LoaderCircle} spin title="Opening your workspace" body="Checking the local session and secure workspace membership." /> : null}
           {connection === "setup" ? <SetupState /> : null}
-          {connection === "ready" || connection === "setup" ? section === "code" ? <CodeWorkspace enabled={connection === "ready" && hasCapability(membership, "integration.manage")} /> : <StudioCanvas section={section} document={selected} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
+          {connection === "ready" || connection === "setup" ? section === "code" ? <CodeWorkspace enabled={connection === "ready" && hasCapability(membership, "integration.manage")} theme={theme} /> : <StudioCanvas section={section} document={selected} documents={documents} siteEvents={siteEvents} submissions={submissions} auditEvents={auditEvents} members={members} viewport={viewport} readOnly={isReadOnly} notice={notice} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
         </main>
 
         <aside className="studio-inspector">
@@ -378,7 +404,7 @@ function LoginState({ email, password, message, busy, onEmail, onPassword, onSub
   return <main className="studio-auth-wrap"><form className="studio-auth-card" onSubmit={onSubmit}><div className="studio-auth-brand"><span className="studio-mark" aria-hidden="true">TC</span><div><small>Tony Consults</small><strong>Studio</strong></div></div><span className="studio-auth-icon"><LockKeyhole /></span><small className="studio-auth-kicker">Private workspace</small><h1>Welcome back.</h1><p>Sign in to manage pages, projects, services, and publishing for Tony Consults.</p><label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => onEmail(event.target.value)} required /></label><label>Password<input type="password" minLength={8} autoComplete="current-password" value={password} onChange={(event) => onPassword(event.target.value)} required /></label>{message ? <div className="studio-alert">{message}</div> : null}<button className="studio-button primary wide" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ShieldCheck />}Sign in to Studio</button><span className="studio-auth-footnote"><ShieldCheck /> Secured with workspace access control</span></form></main>;
 }
 
-function StudioCanvas({ section, document, viewport, readOnly, notice, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; viewport: ViewportMode; readOnly: boolean; notice: string; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
+function StudioCanvas({ section, document, documents, siteEvents, submissions, auditEvents, members, viewport, readOnly, notice, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; documents: CmsDocument[]; siteEvents: SiteEvent[]; submissions: FormSubmission[]; auditEvents: AuditEvent[]; members: WorkspaceMemberRecord[]; viewport: ViewportMode; readOnly: boolean; notice: string; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
   const [mode, setMode] = useState<EditorMode>("blocks");
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
@@ -391,7 +417,7 @@ function StudioCanvas({ section, document, viewport, readOnly, notice, onUpdate,
     setCodeError("");
   }, [document?.id]);
 
-  if (!editorial) return <OperationsDashboard section={section} />;
+  if (!editorial) return <OperationsDashboard section={section} documents={documents} siteEvents={siteEvents} submissions={submissions} auditEvents={auditEvents} members={members} />;
   if (!document) return <CenteredState icon={Archive} title="Nothing selected" body="Choose a record from the navigator or create a new one." />;
 
   const updateBlocks = (nextBlocks: CmsContentBlock[]) => onBodyUpdate({ ...document.draft_body, blocks: nextBlocks });
@@ -430,7 +456,7 @@ const codeGroups = [
   { label: "Design system", files: ["src/app/globals.css", "src/app/admin/studio.css", "src/data/site.ts", "src/app/layout.tsx"] },
 ] as const;
 
-function CodeWorkspace({ enabled }: { enabled: boolean }) {
+function CodeWorkspace({ enabled, theme }: { enabled: boolean; theme: "dark" | "light" }) {
   const [file, setFile] = useState<string>(codeGroups[0].files[0]);
   const [source, setSource] = useState("");
   const [sha, setSha] = useState("");
@@ -472,16 +498,48 @@ function CodeWorkspace({ enabled }: { enabled: boolean }) {
     setMessage("Saved to GitHub. The Pages deployment has started.");
   };
 
-  return <div className="studio-code-workspace"><div className="studio-editor-heading"><div><small>Code workspace</small><h1>Design and page code</h1><p>Edit the real source that powers the public pages, header, footer, motion and dashboard. Each save creates a GitHub commit and starts the Pages deployment.</p></div><span className="studio-pill">Protected gateway</span></div><div className="studio-code-layout"><aside className="studio-code-tree">{codeGroups.map((group) => <section key={group.label}><small>{group.label}</small>{group.files.map((path) => <button className={path === file ? "active" : ""} type="button" key={path} onClick={() => setFile(path)}><Code2 /><span>{path.split("/").pop()}</span></button>)}</section>)}</aside><section className="studio-code-surface"><header><span>{file}</span><div><button className="studio-button secondary" type="button" disabled={loading || saving} onClick={() => void loadFile(file)}><Cloud /> Reload</button><button className="studio-button primary" type="button" disabled={!enabled || loading || saving || !sha} onClick={() => void saveFile()}>{saving ? <LoaderCircle className="spin" /> : <Save />} Save & deploy</button></div></header>{!enabled ? <div className="studio-code-gateway-note"><LockKeyhole /><div><strong>Owner access required</strong><p>Code editing is available only to an authenticated owner with integration permission.</p></div></div> : null}<textarea aria-label={`Source for ${file}`} spellCheck={false} value={source} disabled={!enabled || loading} onChange={(event) => setSource(event.target.value)} placeholder={loading ? "Loading source..." : "Select a source file from the workspace."} />{message ? <footer><span>{message}</span><small>GitHub commits are versioned and can be rolled back there.</small></footer> : null}</section></div></div>;
+  const activeGroup = codeGroups.find((group) => group.files.includes(file as never))?.label ?? "Source";
+  const activeLabel = file.endsWith("src/app/page.tsx") ? "Home page" : file.includes("/app/") ? `${file.split("/").slice(2, -1).join(" / ")} page` : activeGroup;
+
+  return <div className={`studio-code-workspace code-theme-${theme}`}><div className="studio-editor-heading"><div><small>Code workspace / editing {activeLabel}</small><h1>Design and page code</h1><p>Edit the real GitHub source behind the selected public page or shared system. Each save creates a versioned commit and starts the Pages deployment.</p></div><span className="studio-pill">Protected gateway</span></div><div className="studio-code-layout"><aside className="studio-code-tree">{codeGroups.map((group) => <section key={group.label}><small>{group.label}</small>{group.files.map((path) => <button className={path === file ? "active" : ""} type="button" key={path} onClick={() => setFile(path)}><Code2 /><span>{path.split("/").pop()}</span></button>)}</section>)}</aside><section className="studio-code-surface"><header><div className="studio-code-file"><span>{file}</span><small>Editing: {activeLabel}</small></div><div><button className="studio-button secondary" type="button" disabled={loading || saving} onClick={() => void loadFile(file)}><Cloud /> Reload</button><button className="studio-button primary" type="button" disabled={!enabled || loading || saving || !sha} onClick={() => void saveFile()}>{saving ? <LoaderCircle className="spin" /> : <Save />} Save & deploy</button></div></header>{!enabled ? <div className="studio-code-gateway-note"><LockKeyhole /><div><strong>Owner access required</strong><p>Code editing is available only to an authenticated owner with integration permission.</p></div></div> : null}<SyntaxCodeEditor file={file} source={source} disabled={!enabled || loading} onChange={setSource} placeholder={loading ? "Loading source..." : "Select a source file from the workspace."} />{message ? <footer><span>{message}</span><small>GitHub commits are versioned and can be rolled back there.</small></footer> : null}</section></div></div>;
 }
 
-function OperationsDashboard({ section }: { section: AdminSection }) {
+function escapeHtml(value: string) {
+  return value.replace(/[&<>]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[character] ?? character);
+}
+
+function highlightedSource(source: string, file: string) {
+  const cssFile = file.endsWith(".css");
+  const tokenPattern = cssFile
+    ? /(\/\*[\s\S]*?\*\/|#[0-9a-fA-F]{3,8}\b|--[\w-]+|\b\d+(?:\.\d+)?(?:px|rem|%|vh|vw|s)?\b|[{}:;])/g
+    : /(\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:\\.|[^`])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:const|let|var|return|import|from|export|default|function|async|await|if|else|new|type|interface|extends|true|false|null|undefined)\b|\b\d+(?:\.\d+)?\b)/g;
+  return source.split(tokenPattern).map((part, index) => {
+    if (!part) return "";
+    const token = cssFile
+      ? part.startsWith("/*") ? "comment" : part.startsWith("#") ? "color" : part.startsWith("--") ? "property" : /^[{}:;]$/.test(part) ? "operator" : /^\d/.test(part) ? "number" : "plain"
+      : part.startsWith("//") || part.startsWith("/*") ? "comment" : part.startsWith("'") || part.startsWith('"') || part.startsWith("`") ? "string" : /^\d/.test(part) ? "number" : /^(true|false|null|undefined)$/.test(part) ? "literal" : /^(const|let|var|return|import|from|export|default|function|async|await|if|else|new|type|interface|extends)$/.test(part) ? "keyword" : "plain";
+    return token === "plain" ? escapeHtml(part) : `<span class="code-token code-token-${token}" data-token="${index}">${escapeHtml(part)}</span>`;
+  }).join("");
+}
+
+function SyntaxCodeEditor({ file, source, disabled, onChange, placeholder }: { file: string; source: string; disabled: boolean; onChange: (value: string) => void; placeholder: string }) {
+  const highlightRef = useRef<HTMLPreElement>(null);
+  return <div className="studio-syntax-editor"><pre ref={highlightRef} aria-hidden="true" dangerouslySetInnerHTML={{ __html: highlightedSource(source || placeholder, file) }} /><textarea aria-label={`Source for ${file}`} spellCheck={false} value={source} disabled={disabled} onScroll={(event) => { if (highlightRef.current) { highlightRef.current.scrollTop = event.currentTarget.scrollTop; highlightRef.current.scrollLeft = event.currentTarget.scrollLeft; } }} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} /></div>;
+}
+
+function OperationsDashboard({ section, documents, siteEvents, submissions, auditEvents, members }: { section: AdminSection; documents: CmsDocument[]; siteEvents: SiteEvent[]; submissions: FormSubmission[]; auditEvents: AuditEvent[]; members: WorkspaceMemberRecord[] }) {
   const labels: Record<AdminSection, [string, string]> = {
-    overview: ["Operational overview", "Content, enquiries and publishing health in one calm view."], content: ["Pages", ""], code: ["Code workspace", ""], projects: ["Projects", ""], services: ["Services", ""], inbox: ["Enquiry inbox", "Form submissions with assignment and status tracking."], assets: ["Asset library", "Workspace-scoped media with searchable metadata."], users: ["People and access", "Invite administrators and assign capabilities without sharing credentials."], publish: ["Release control", "Review draft changes and publish from an auditable state."], audit: ["Audit trail", "An immutable record of important administrative actions."], settings: ["Workspace settings", "Brand, integrations, SEO and delivery configuration."],
+    overview: ["Operational overview", "Live CMS, visits and publishing activity from your Tony Consults workspace."], content: ["Pages", ""], code: ["Code workspace", ""], projects: ["Projects", ""], services: ["Services", ""], inbox: ["Enquiry inbox", "Form submissions with assignment and status tracking."], assets: ["Asset library", "Workspace-scoped media with searchable metadata."], analytics: ["Visitor analytics", "Optional, consent-based page visits from the public website."], users: ["People and access", "Invite administrators and assign capabilities without sharing credentials."], publish: ["Release control", "Review draft changes and publish from an auditable state."], audit: ["Audit trail", "An immutable record of important administrative actions."], settings: ["Workspace settings", "Brand, integrations, SEO and delivery configuration."],
   };
   const [title, body] = labels[section];
-  const cards = section === "overview" ? [["12", "Published records"], ["3", "Draft changes"], ["0", "Failed releases"], ["100%", "Policy coverage"]] : [["Ready", "Database schema"], ["RLS", "Access control"], ["Tracked", "Audit events"], ["Scoped", "Workspace data"]];
-  return <div className="studio-operations"><div className="studio-editor-heading"><div><small>Workspace</small><h1>{title}</h1><p>{body}</p></div><button className="studio-button secondary"><Cloud /> Refresh</button></div><div className="studio-metric-grid">{cards.map(([value, label]) => <article key={label}><span>{label}</span><strong>{value}</strong><i /></article>)}</div><div className="studio-operations-grid"><section><div className="studio-section-heading"><div><small>Activity</small><h2>Recent changes</h2></div><Activity /></div>{["Homepage content reviewed", "Service package draft updated", "Portfolio project published"].map((item, index) => <div className="studio-activity-row" key={item}><span><Check /></span><div><strong>{item}</strong><small>{index + 1} day{index ? "s" : ""} ago</small></div></div>)}</section><section><div className="studio-section-heading"><div><small>Release</small><h2>Publishing health</h2></div><Rocket /></div><div className="studio-release-card"><span><ShieldCheck /></span><strong>Delivery foundation ready</strong><p>Connect the dedicated Supabase project, add your owner membership, then publishing and revision history become live.</p></div></section></div></div>;
+  const published = documents.filter((document) => document.status === "published").length;
+  const drafts = documents.filter((document) => document.status === "draft" || document.status === "review").length;
+  const uniqueVisitors = new Set(siteEvents.map((event) => event.visitor_id)).size;
+  const cards = section === "analytics" ? [[String(siteEvents.length), "Recorded page views"], [String(uniqueVisitors), "Anonymous visitors"], [String(new Set(siteEvents.map((event) => event.page_path)).size), "Pages visited"], [siteEvents[0] ? new Date(siteEvents[0].created_at).toLocaleDateString() : "No data", "Latest visit"]] : section === "inbox" ? [[String(submissions.length), "All enquiries"], [String(submissions.filter((item) => item.status === "new").length), "New enquiries"], [String(submissions.filter((item) => item.status === "in_progress").length), "In progress"], [String(submissions.filter((item) => item.status === "resolved").length), "Resolved"]] : section === "users" ? [[String(members.length), "Workspace members"], [String(members.filter((item) => item.role === "owner").length), "Owners"], [String(members.filter((item) => item.role === "admin").length), "Administrators"], [String(members.filter((item) => item.status === "active").length), "Active accounts"]] : section === "audit" ? [[String(auditEvents.length), "Recorded events"], [String(auditEvents.filter((item) => item.action.startsWith("document.")).length), "Content events"], [String(auditEvents.filter((item) => item.action === "site.page_view").length), "Visit events"], [auditEvents[0] ? new Date(auditEvents[0].created_at).toLocaleDateString() : "No data", "Latest event"]] : [[String(published), "Published records"], [String(drafts), "Draft changes"], [String(siteEvents.length), "Consent-based views"], [String(uniqueVisitors), "Anonymous visitors"]];
+  const popularPages = [...siteEvents].reduce<Record<string, number>>((counts, event) => ({ ...counts, [event.page_path]: (counts[event.page_path] ?? 0) + 1 }), {});
+  const activity = section === "inbox" ? submissions.map((item) => ({ id: item.id, title: String(item.payload.name ?? item.payload.email ?? item.form_key), detail: `${item.status} - ${new Date(item.created_at).toLocaleString()}` })) : section === "users" ? members.map((item) => ({ id: item.user_id, title: item.profiles?.display_name ?? item.user_id, detail: `${item.role} - ${item.status}` })) : section === "audit" ? auditEvents.map((item) => ({ id: String(item.id), title: item.action.replaceAll(".", " "), detail: `${item.entity_type} - ${new Date(item.created_at).toLocaleString()}` })) : documents.map((item) => ({ id: item.id, title: item.title, detail: `Updated ${new Date(item.updated_at).toLocaleString()}` }));
+  const activityTitle = section === "analytics" ? "Page interest" : section === "inbox" ? "Latest enquiries" : section === "users" ? "People and access" : section === "audit" ? "Latest audit events" : "Recent changes";
+  return <div className="studio-operations"><div className="studio-editor-heading"><div><small>Workspace</small><h1>{title}</h1><p>{body}</p></div><button className="studio-button secondary" type="button" onClick={() => window.location.reload()}><Cloud /> Refresh</button></div><div className="studio-metric-grid">{cards.map(([value, label]) => <article key={label}><span>{label}</span><strong>{value}</strong><i /></article>)}</div><div className="studio-operations-grid"><section><div className="studio-section-heading"><div><small>{section === "analytics" ? "Most visited" : "Live workspace data"}</small><h2>{activityTitle}</h2></div><Activity /></div>{section === "analytics" ? Object.entries(popularPages).sort(([, a], [, b]) => b - a).slice(0, 3).map(([path, visits]) => <div className="studio-activity-row" key={path}><span><BarChart3 /></span><div><strong>{path}</strong><small>{visits} recorded view{visits === 1 ? "" : "s"}</small></div></div>) : activity.slice(0, 5).map((item) => <div className="studio-activity-row" key={item.id}><span><Check /></span><div><strong>{item.title}</strong><small>{item.detail}</small></div></div>)}</section><section><div className="studio-section-heading"><div><small>Release</small><h2>Publishing health</h2></div><Rocket /></div><div className="studio-release-card"><span><ShieldCheck /></span><strong>{published} public records are ready</strong><p>Published CMS projects and services are generated as public static pages on the next GitHub Pages build. Analytics begin only when a visitor accepts optional cookies.</p></div></section></div></div>;
 }
 
 function Inspector({ document, membership, connection }: { document: CmsDocument | null; membership: WorkspaceMembership | null; connection: ConnectionState }) {

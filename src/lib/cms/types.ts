@@ -49,6 +49,42 @@ export type WorkspaceMembership = {
   workspaces?: { name: string; slug: string } | null;
 };
 
+export type SiteEvent = {
+  id: number;
+  workspace_id: string;
+  event_type: "page_view";
+  page_path: string;
+  visitor_id: string;
+  created_at: string;
+};
+
+export type FormSubmission = {
+  id: string;
+  workspace_id: string;
+  form_key: string;
+  status: "new" | "in_progress" | "resolved" | "spam";
+  payload: Record<string, unknown>;
+  source_url: string | null;
+  created_at: string;
+};
+
+export type AuditEvent = {
+  id: number;
+  workspace_id: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type WorkspaceMemberRecord = WorkspaceMembership & {
+  user_id: string;
+  status: "invited" | "active" | "suspended";
+  profiles?: { display_name: string | null } | null;
+};
+
 export type AdminSection =
   | "overview"
   | "content"
@@ -57,6 +93,7 @@ export type AdminSection =
   | "services"
   | "inbox"
   | "assets"
+  | "analytics"
   | "users"
   | "publish"
   | "audit"

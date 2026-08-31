@@ -11,6 +11,7 @@ const splashQuotes = [
 ];
 
 const FIRST_LOAD_KEY = "tony-first-load-screen-seen";
+const LOAD_CONFIG = { minimumMs: 1000, maximumMs: 3200, revealDelayMs: 360 };
 
 const waitForWindowLoad = () =>
   new Promise<void>((resolve) => {
@@ -37,6 +38,8 @@ const waitForImages = () =>
       return image.decode().catch(() => undefined);
     }),
   ).then(() => undefined);
+
+const wait = (duration: number) => new Promise<void>((resolve) => window.setTimeout(resolve, duration));
 
 export function FirstLoadScreen() {
   const pathname = usePathname();
@@ -93,7 +96,7 @@ export function FirstLoadScreen() {
         root.dataset.firstLoadScreen = "ready";
         setActive(false);
         window.dispatchEvent(new Event("site-first-load-complete"));
-      }, 420);
+      }, LOAD_CONFIG.revealDelayMs);
     };
 
     setActive(true);
@@ -103,25 +106,18 @@ export function FirstLoadScreen() {
       setQuoteIndex((current) => (current + 1) % splashQuotes.length);
     }, 1800);
 
-    window.setTimeout(() => {
-      targetProgress = 28;
-    }, 120);
-    window.setTimeout(() => {
-      targetProgress = 54;
-    }, 420);
-    window.setTimeout(() => {
-      targetProgress = 76;
-    }, 780);
-    window.setTimeout(() => {
-      targetProgress = 92;
-    }, 1120);
+    window.setTimeout(() => { targetProgress = 32; }, 120);
+    window.setTimeout(() => { targetProgress = 62; }, 420);
+    window.setTimeout(() => { targetProgress = 84; }, 780);
+    window.setTimeout(() => { targetProgress = 96; }, 1120);
 
-    Promise.all([
+    const ready = Promise.all([
       waitForWindowLoad(),
       waitForFonts(),
-      waitForImages(),
-      new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
-    ]).then(complete);
+      Promise.race([waitForImages(), wait(1800)]),
+      wait(LOAD_CONFIG.minimumMs),
+    ]);
+    Promise.race([ready, wait(LOAD_CONFIG.maximumMs)]).then(complete);
 
     return () => {
       cancelled = true;

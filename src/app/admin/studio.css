@@ -25,10 +25,10 @@
 }
 
 .tony-studio.studio-theme-light {
-  --studio-bg: #ebe6da;
-  --studio-panel: #f4ecd6;
-  --studio-panel-2: #e5decd;
-  --studio-panel-3: #d7d0c2;
+  --studio-bg: #eef0ed;
+  --studio-panel: #ffffff;
+  --studio-panel-2: #f5f2e9;
+  --studio-panel-3: #e7e1d3;
   --studio-line: rgba(36, 35, 49, 0.16);
   --studio-line-strong: rgba(162, 112, 53, 0.46);
   --studio-text: #242331;
@@ -37,7 +37,7 @@
   --studio-earth: #533e2d;
   --studio-teal: #527f7d;
   --studio-good: #668d70;
-  --studio-code-bg: #fcf9f0;
+  --studio-code-bg: #fbfcfe;
   --studio-code-text: #242331;
   color-scheme: light;
 }
@@ -69,7 +69,8 @@
 .studio-command-brand > span:not(.studio-mark) { display: grid; gap: 1px; }
 .studio-command-brand small, .studio-panel-title small, .studio-editor-heading small, .studio-section-heading small { color: var(--studio-muted); font-size: 0.65rem; font-weight: 750; text-transform: uppercase; }
 .studio-command-brand strong { font-size: 0.86rem; }
-.studio-mark { display: grid; width: 34px; height: 34px; place-items: center; background: var(--studio-accent); color: #242331; font: 850 0.74rem var(--font-display), sans-serif; }
+.studio-mark { display: grid; width: 34px; height: 34px; place-items: center; overflow: hidden; background: var(--studio-accent); }
+.studio-mark img { width: 100%; height: 100%; object-fit: cover; }
 .studio-command-center { justify-content: center; gap: 10px; }
 .studio-command-actions { justify-content: flex-end; gap: 7px; }
 .studio-icon, .studio-breakpoints button { display: inline-grid; width: 36px; height: 36px; padding: 0; place-items: center; border: 1px solid var(--studio-line); background: var(--studio-panel-2); cursor: pointer; }
@@ -208,10 +209,32 @@
 .studio-code-tree button:hover, .studio-code-tree button.active { border-color: var(--studio-line); background: var(--studio-panel); color: var(--studio-accent); }
 .studio-code-surface { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; }
 .studio-code-surface > header, .studio-code-surface > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; border-bottom: 1px solid var(--studio-line); }
-.studio-code-surface > header > span { overflow: hidden; color: var(--studio-muted); font: .68rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.studio-code-surface > header > span, .studio-code-file > span { overflow: hidden; color: var(--studio-muted); font: .68rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .studio-code-surface > header > div { display: flex; gap: 7px; }
-.studio-code-surface > textarea { width: 100%; min-height: 460px; border: 0; outline: 0; background: var(--studio-code-bg); color: var(--studio-code-text); padding: 18px; font: .76rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: none; tab-size: 2; }
-.studio-code-surface > textarea:focus { box-shadow: inset 3px 0 var(--studio-accent); }
+.studio-code-file { display: grid; gap: 3px; min-width: 0; }
+.studio-code-file small { color: var(--studio-accent); font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+.studio-syntax-editor { display: grid; min-height: 460px; overflow: hidden; background: var(--studio-code-bg); }
+.studio-syntax-editor > pre, .studio-syntax-editor > textarea { grid-area: 1 / 1; width: 100%; height: 100%; min-height: 460px; margin: 0; padding: 18px; border: 0; font: .76rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; tab-size: 2; white-space: pre; overflow: auto; }
+.studio-syntax-editor > pre { color: var(--studio-code-text); pointer-events: none; scrollbar-width: none; }
+.studio-syntax-editor > textarea { position: relative; z-index: 1; outline: 0; resize: none; background: transparent; color: transparent; caret-color: var(--studio-accent); -webkit-text-fill-color: transparent; }
+.studio-syntax-editor > textarea::selection { background: color-mix(in srgb, var(--studio-accent) 45%, transparent); }
+.studio-syntax-editor:focus-within { box-shadow: inset 3px 0 var(--studio-accent); }
+.studio-syntax-editor > textarea:disabled { cursor: not-allowed; opacity: .55; }
+.code-token-comment { color: #7f8c98; font-style: italic; }
+.code-token-string { color: #c3e88d; }
+.code-token-number { color: #f78c6c; }
+.code-token-keyword { color: #c792ea; }
+.code-token-literal { color: #82aaff; }
+.code-token-property { color: #82aaff; }
+.code-token-color { color: #f07178; }
+.code-token-operator { color: #89ddff; }
+.code-theme-light .code-token-comment { color: #6a737d; }
+.code-theme-light .code-token-string { color: #22863a; }
+.code-theme-light .code-token-number { color: #b31d28; }
+.code-theme-light .code-token-keyword { color: #6f42c1; }
+.code-theme-light .code-token-literal, .code-theme-light .code-token-property { color: #005cc5; }
+.code-theme-light .code-token-color { color: #c18401; }
+.code-theme-light .code-token-operator { color: #24292f; }
 .studio-code-surface > footer { border-top: 1px solid var(--studio-line); border-bottom: 0; color: var(--studio-good); font-size: .68rem; }
 .studio-code-surface > footer small { color: var(--studio-muted); font-size: .62rem; }
 .studio-code-gateway-note { display: grid; grid-template-columns: 32px 1fr; gap: 10px; margin: 12px; padding: 12px; border: 1px solid var(--studio-line-strong); background: color-mix(in srgb, var(--studio-accent) 8%, transparent); }
@@ -292,6 +315,18 @@
   .studio-body.left-closed { grid-template-columns: 0 minmax(0, 1fr); }
   .studio-inspector { display: none; }
   .studio-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1101px) and (max-width: 1350px) {
+  .studio-body { grid-template-columns: 270px minmax(0, 1fr) 285px; }
+  .studio-body.left-closed { grid-template-columns: 0 minmax(0, 1fr) 285px; }
+  .studio-body.right-closed { grid-template-columns: 270px minmax(0, 1fr) 0; }
+  .studio-code-workspace { padding: 22px; }
+  .studio-code-layout { grid-template-columns: 190px minmax(0, 1fr); }
+  .studio-code-tree section { padding-inline: 7px; }
+  .studio-code-surface > header { align-items: flex-start; flex-direction: column; }
+  .studio-code-surface > header > div { width: 100%; }
+  .studio-code-surface > header .studio-button { flex: 1; }
 }
 
 @media (max-width: 760px) {

@@ -203,7 +203,6 @@ export function Header() {
           <Link className="dock-brand" data-dock-transfer="brand" href="/">
             <strong>ANTONY</strong><span>MBURU</span>
           </Link>
-          {themeButton("dock")}
           <p className="dock-intro">Website design and practical static web systems for businesses ready to look credible online.</p>
           <nav className="dock-nav" aria-label="Side navigation">
             {nav.map((item) => {
