@@ -3,13 +3,7 @@ import { Inter, Sora } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import { capabilities, profile, services } from "@/data/site";
-import { Footer } from "@/components/Footer";
-import { FirstLoadScreen } from "@/components/FirstLoadScreen";
-import { Header } from "@/components/Header";
-import { MotionProvider } from "@/components/MotionProvider";
-import { PageTransition } from "@/components/PageTransition";
-import { CookieConsent } from "@/components/CookieConsent";
-import { ScrollExperience } from "@/components/ScrollExperience";
+import { AppFrame } from "@/components/AppFrame";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-display", display: "swap" });
@@ -145,15 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <noscript>
           <style>{`.intro-greeting,[data-hero-image="soft"]{display:none!important}.site-header-home{opacity:1!important;visibility:visible!important}`}</style>
         </noscript>
-        <a className="skip-link" href="#main-content">Skip to content</a>
-        <FirstLoadScreen />
-        <PageTransition />
-        <MotionProvider />
-        <ScrollExperience />
-        <Header />
-        <main id="main-content">{children}</main>
-        <Footer />
-        <CookieConsent />
+        <AppFrame>{children}</AppFrame>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </body>
     </html>
