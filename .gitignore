@@ -9,3 +9,4 @@ dist/
 *.tsbuildinfo
 work/
 .codex-remote-attachments/
+supabase/.temp/
