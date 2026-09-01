@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUpRight, CalendarDays, Check, Handshake } from "lucide-react";
-import { capabilities, profile, projects, services } from "@/data/site";
+import { capabilities, profile } from "@/data/site";
 import { HeroTypingCards } from "@/components/HeroTypingCards";
+import { HomeProjectGrid, HomeServicesSection } from "@/components/ProjectRail";
 
 export const metadata: Metadata = {
   title: { absolute: "Tony Consults | Website Designer & Developer in Kenya" },
@@ -134,39 +135,12 @@ export default function Home() {
               <div><p className="eyebrow">02 / Selected work</p><h2>Useful systems,<br />clearly presented.</h2></div>
               <div><p>Concepts and practical builds shaped around a clear audience, a focused action and straightforward maintenance.</p><Link className="text-link light-link" href="/work/">View all projects <ArrowUpRight size={17} /></Link></div>
             </div>
-            <div className="featured-grid" data-home-project-track>
-              {projects.slice(0, 3).map((project, index) => (
-                <article className={`featured-project project-tone-${index + 1}`} data-reveal key={project.name}>
-                  <div className="project-preview" aria-hidden="true">
-                    <span className="preview-bar" />
-                    <span className="preview-panel preview-panel-main" />
-                    <span className="preview-panel preview-panel-side" />
-                    <b>{project.year}</b>
-                  </div>
-                  <div className="project-card-copy"><span>{project.type}</span><h3>{project.name}</h3><p>{project.copy}</p></div>
-                  <Link href="/work/" aria-label={`Read more about ${project.name}`}>Read more <ArrowUpRight size={16} /></Link>
-                </article>
-              ))}
-            </div>
+            <HomeProjectGrid />
           </div>
         </div>
       </section>
 
-      <section className="home-services section-band section-light" id="services">
-        <div className="section-shell">
-          <div className="section-heading section-heading-split" data-reveal>
-            <div><p className="eyebrow">03 / Services</p><h2>Choose the right<br />starting point.</h2></div>
-            <div><p>Clear scopes for a portfolio launch, a business growth pack or a full e-commerce build with tiered upgrades.</p><Link className="text-link" href="/services/">See services and process <ArrowUpRight size={17} /></Link><Link className="text-link" href="/website-design-kenya/">Website design in Kenya <ArrowUpRight size={17} /></Link></div>
-          </div>
-          <div className="service-preview-list">
-            {services.slice(0, 3).map((service, index) => (
-              <Link className="service-preview-row" href="/services/" data-reveal key={service.title}>
-                <span>0{index + 1}</span><h3>{service.title}</h3><p>{service.body}</p><strong>{service.price}</strong><ArrowUpRight size={22} />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HomeServicesSection />
 
       <section className="home-promise section-band section-dark" data-promise-reveal>
         <div className="promise-pixel-scene" aria-hidden="true">
