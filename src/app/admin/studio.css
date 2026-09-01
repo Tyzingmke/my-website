@@ -274,6 +274,10 @@
 .studio-inbox-list p { color: var(--studio-muted); font-size: .76rem; line-height: 1.55; }
 .studio-inbox-list p:last-of-type { color: var(--studio-text); }
 .studio-inbox-list footer { padding-top: 9px; border-top: 1px solid var(--studio-line); }
+.studio-inbox-actions { display: flex; align-items: center; gap: 7px; }
+.studio-delete-button { width: 29px; height: 29px; color: var(--studio-danger); }
+.studio-delete-button:hover { border-color: color-mix(in srgb, var(--studio-danger) 60%, transparent); background: color-mix(in srgb, var(--studio-danger) 10%, transparent); }
+.studio-inline-notice { margin: 10px 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--studio-good) 45%, transparent); background: color-mix(in srgb, var(--studio-good) 8%, transparent); color: var(--studio-good); font-size: .72rem; }
 
 .studio-inspector { min-width: 0; padding: 12px; border-left: 1px solid var(--studio-line); }
 .studio-inspector-content { display: grid; gap: 16px; padding-top: 14px; }

@@ -17,7 +17,8 @@ export function ContactForm() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setSending(true);
     setMessage("");
     const supabase = getSupabaseBrowserClient();
@@ -27,7 +28,7 @@ export function ContactForm() {
     } });
     setSending(false);
     if (error || !data?.ok) { setMessage(data?.error ?? "Your message could not be sent. Please use WhatsApp or email."); return; }
-    event.currentTarget.reset();
+    formElement.reset();
     setSubmitted(true);
   };
 

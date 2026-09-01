@@ -12,6 +12,13 @@ type SaveDocumentInput = {
   publish?: boolean;
 };
 
+type DeleteSubmissionInput = {
+  action: "delete-submission";
+  id: string;
+};
+
+type StudioInput = SaveDocumentInput | DeleteSubmissionInput;
+
 const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -44,10 +51,34 @@ Deno.serve(async (request) => {
     .eq("status", "active")
     .limit(1)
     .maybeSingle();
-  if (!membership || !may(membership, "page.edit")) return json({ ok: false, error: "You do not have permission to edit this workspace." }, 403);
+  if (!membership) return json({ ok: false, error: "You do not have permission to access this workspace." }, 403);
 
-  const body = await request.json().catch(() => null) as SaveDocumentInput | null;
+  const body = await request.json().catch(() => null) as StudioInput | null;
+  if (body?.action === "delete-submission") {
+    if (!may(membership, "form.manage")) return json({ ok: false, error: "You do not have permission to delete enquiries." }, 403);
+    if (!body.id) return json({ ok: false, error: "An enquiry is required." }, 400);
+    const { data: submission, error } = await service
+      .from("form_submissions")
+      .delete()
+      .eq("id", body.id)
+      .eq("workspace_id", membership.workspace_id)
+      .select("id")
+      .maybeSingle();
+    if (error) return json({ ok: false, error: error.message }, 400);
+    if (!submission) return json({ ok: false, error: "This enquiry no longer exists." }, 404);
+    await service.from("audit_events").insert({
+      workspace_id: membership.workspace_id,
+      actor_id: userData.user.id,
+      action: "submission.deleted",
+      entity_type: "form_submission",
+      entity_id: body.id,
+      metadata: { form_key: "contact" },
+    });
+    return json({ ok: true });
+  }
+
   if (body?.action !== "save-document" || !body.id || !body.title?.trim() || !body.slug?.trim()) return json({ ok: false, error: "A document, title and URL slug are required." }, 400);
+  if (!may(membership, "page.edit")) return json({ ok: false, error: "You do not have permission to edit this workspace." }, 403);
   if (body.publish && !may(membership, "page.publish")) return json({ ok: false, error: "Your role can save drafts but cannot publish." }, 403);
 
   const update = {
