@@ -4,7 +4,6 @@ import { FormEvent, ReactNode, createContext, useContext, useEffect, useState } 
 import Link from "next/link";
 import { Heart, LockKeyhole, Moon, Sun } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { ThreePetalField } from "@/components/ThreePetalField";
 import styles from "@/app/niche/niche.module.css";
 
 const tokenKey = "tony-consults-niche-access";
@@ -50,7 +49,6 @@ export function NicheAccess({ children }: { children: ReactNode }) {
   };
 
   return <main className={styles.page} data-niche-theme={theme}>
-    <ThreePetalField />
     <button className={styles.themeToggle} type="button" onClick={() => chooseTheme(theme === "dark" ? "light" : "dark")} aria-label={`Use ${theme === "dark" ? "light" : "dark"} theme`}>
       {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
     </button>
