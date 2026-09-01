@@ -1,7 +1,7 @@
 export type CmsDocumentKind = "page" | "project" | "service" | "site_settings";
 export type CmsDocumentStatus = "draft" | "review" | "published" | "archived";
 
-export type CmsContentBlockType = "hero" | "story" | "collection" | "features" | "cta" | "details";
+export type CmsContentBlockType = "hero" | "story" | "collection" | "features" | "cta" | "details" | "image";
 
 export type CmsContentBlock = {
   id: string;

@@ -93,6 +93,7 @@ const BLOCK_TITLES: Record<CmsContentBlockType, string> = {
   features: "Feature list",
   cta: "Call to action",
   details: "Details",
+  image: "Image",
 };
 
 function fallbackBlocks(document: CmsDocument): CmsContentBlock[] {

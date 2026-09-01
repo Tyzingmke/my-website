@@ -27,7 +27,7 @@ function asProjectCard(document: CmsDocument): ProjectCard {
     slug: document.slug,
     title: document.title,
     label: String(body.cardLabel ?? body.eyebrow ?? hero?.eyebrow ?? "Project"),
-    summary: String(body.summary ?? hero?.body ?? body.body ?? "A Tony Consults project."),
+    summary: String(hero?.body ?? body.summary ?? body.body ?? "A Tony Consults project."),
     tags,
     imageUrl: String(body.imageUrl ?? hero?.imageUrl ?? ""),
     stage: body.stage === "coming_soon" ? "coming_soon" : "live",

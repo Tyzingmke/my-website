@@ -1594,6 +1594,10 @@ html:not([data-motion]) [data-hero-name] {
   color: var(--ink);
 }
 .project-preview > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cms-public-hero-image { display: block; width: 100%; max-height: 430px; object-fit: cover; border: 1px solid var(--line-dark); }
+.cms-public-image-block { grid-column: 1 / -1; }
+.cms-public-image-block img { display: block; width: 100%; max-height: 720px; object-fit: cover; }
+.cms-public-image-block h2 { margin-top: 16px; }
 
 .featured-project:first-child {
   grid-row: span 2;
