@@ -9,6 +9,7 @@ import { MotionProvider } from "@/components/MotionProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { ScrollExperience } from "@/components/ScrollExperience";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
+import { SiteTheme } from "@/components/SiteTheme";
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,6 +27,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
       <MotionProvider />
       <ScrollExperience />
       <SiteAnalytics />
+      <SiteTheme />
       <Header />
       <main id="main-content">{children}</main>
       <Footer />

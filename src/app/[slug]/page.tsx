@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getPublishedCmsDocument, getPublishedCmsSlugs } from "@/lib/cms/public";
+import { ThemeImage } from "@/components/ThemeImage";
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
@@ -40,12 +41,12 @@ export default async function CmsPublicPage({ params }: { params: Promise<{ slug
           <p>{String(hero?.body ?? body.summary ?? body.body ?? "A Tony Consults digital project.")}</p>
         </div>
         <div className="page-hero-aside" data-reveal>
-          {hero?.imageUrl ? <img className="cms-public-hero-image" src={hero.imageUrl} alt="" /> : <p>This is a published Tony Consults {document.kind} record.</p>}
+          {hero?.imageUrl || hero?.imageUrlDark ? <ThemeImage className="cms-public-hero-image" lightSrc={hero.imageUrl} darkSrc={hero.imageUrlDark} alt={hero.heading ?? document.title} /> : <p>This is a published Tony Consults {document.kind} record.</p>}
           <Link className="text-link" href="/contact/">Discuss a similar project <ArrowUpRight size={17} /></Link>
         </div>
       </div>
     </section>
-    {supportingBlocks.length ? <section className="section-band section-light"><div className="section-shell cms-public-blocks">{supportingBlocks.map((block) => <article className={block.type === "image" ? "cms-public-image-block" : ""} data-reveal key={block.id}>{block.imageUrl ? <img src={block.imageUrl} alt={block.heading ?? block.label} /> : null}{block.type !== "image" ? <p className="eyebrow">{block.label}</p> : null}{block.heading ? <h2>{block.heading}</h2> : null}{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <ul>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : null}{block.ctaLabel && block.ctaHref ? <Link className="text-link" href={block.ctaHref}>{block.ctaLabel} <ArrowUpRight size={17} /></Link> : null}</article>)}</div></section> : null}
+    {supportingBlocks.length ? <section className="section-band section-light"><div className="section-shell cms-public-blocks">{supportingBlocks.map((block) => <article className={block.type === "image" ? "cms-public-image-block" : ""} data-reveal key={block.id}>{block.imageUrl || block.imageUrlDark ? <ThemeImage lightSrc={block.imageUrl} darkSrc={block.imageUrlDark} alt={block.heading ?? block.label} /> : null}{block.type !== "image" ? <p className="eyebrow">{block.label}</p> : null}{block.heading ? <h2>{block.heading}</h2> : null}{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <ul>{block.items.map((item) => <li key={item}>{item}</li>)}</ul> : null}{block.ctaLabel && block.ctaHref ? <Link className="text-link" href={block.ctaHref}>{block.ctaLabel} <ArrowUpRight size={17} /></Link> : null}</article>)}</div></section> : null}
     <section className="section-band section-dark"><div className="section-shell cta-band" data-reveal><p className="eyebrow">Have a similar goal?</p><h2>Let&apos;s build the useful version.</h2><Link className="button button-acid" href="/contact/">Start a conversation <ArrowRight size={18} /></Link></div></section>
   </>;
 }

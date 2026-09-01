@@ -11,6 +11,7 @@ export type CmsContentBlock = {
   heading?: string;
   body?: string;
   imageUrl?: string;
+  imageUrlDark?: string;
   items?: string[];
   ctaLabel?: string;
   ctaHref?: string;
@@ -21,6 +22,7 @@ export type CmsDocumentBody = {
   summary?: string;
   body?: string;
   imageUrl?: string;
+  imageUrlDark?: string;
   ctaLabel?: string;
   ctaHref?: string;
   featured?: boolean;

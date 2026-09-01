@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CmsDocument } from "@/lib/cms/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ThemeImage } from "@/components/ThemeImage";
 
 type ProjectCard = {
   id: string;
@@ -14,6 +15,7 @@ type ProjectCard = {
   summary: string;
   tags: string[];
   imageUrl: string;
+  imageUrlDark: string;
   stage: "live" | "coming_soon";
 };
 
@@ -30,6 +32,7 @@ function asProjectCard(document: CmsDocument): ProjectCard {
     summary: String(hero?.body ?? body.summary ?? body.body ?? "A Tony Consults project."),
     tags,
     imageUrl: String(body.imageUrl ?? hero?.imageUrl ?? ""),
+    imageUrlDark: String(body.imageUrlDark ?? hero?.imageUrlDark ?? ""),
     stage: body.stage === "coming_soon" ? "coming_soon" : "live",
   };
 }
@@ -38,7 +41,7 @@ function ProjectCard({ project, index }: { project: ProjectCard; index: number }
   return <article className={`project-film-card project-tone-${(index % 3) + 1} ${project.stage === "coming_soon" ? "is-coming-soon" : ""}`}>
     <div className="film-card-visual">
       <div className="film-browser-bar"><i /><i /><i /><span>{project.stage === "coming_soon" ? "Coming soon" : project.label}</span></div>
-      {project.imageUrl ? <img src={project.imageUrl} alt="" /> : <div className="film-interface" aria-hidden="true"><span className="film-copy film-copy-wide" /><span className="film-copy" /><div className="film-module-grid"><b /><b /><b /><b /></div></div>}
+      {project.imageUrl || project.imageUrlDark ? <ThemeImage lightSrc={project.imageUrl} darkSrc={project.imageUrlDark} alt={project.title} /> : <div className="film-interface" aria-hidden="true"><span className="film-copy film-copy-wide" /><span className="film-copy" /><div className="film-module-grid"><b /><b /><b /><b /></div></div>}
       <strong>{String(index + 1).padStart(2, "0")}</strong>
     </div>
     <div className="film-card-copy"><span>{project.stage === "coming_soon" ? "Coming soon" : project.label}</span><h3>{project.title}</h3><p>{project.summary}</p>{project.tags.length ? <div>{project.tags.map((tag) => <small key={tag}>{tag}</small>)}</div> : null}</div>
@@ -71,7 +74,7 @@ export function HomeProjectGrid() {
     void supabase.from("cms_documents").select("id, workspace_id, kind, slug, title, status, schema_version, draft_body, published_body, version, updated_at, published_at").eq("kind", "project").eq("status", "published").order("published_at", { ascending: false }).limit(3).then(({ data }) => setProjects(((data ?? []) as CmsDocument[]).map(asProjectCard)));
   }, []);
 
-  return <div className="featured-grid" data-home-project-track>{projects.map((project, index) => <article className={`featured-project project-tone-${(index % 3) + 1}`} data-reveal key={project.id}><div className="project-preview">{project.imageUrl ? <img src={project.imageUrl} alt="" /> : <><span className="preview-bar" /><span className="preview-panel preview-panel-main" /><span className="preview-panel preview-panel-side" /></>}<b>{String(index + 1).padStart(2, "0")}</b></div><div className="project-card-copy"><span>{project.stage === "coming_soon" ? "Coming soon" : project.label}</span><h3>{project.title}</h3><p>{project.summary}</p></div><Link href={project.stage === "coming_soon" ? "/contact/" : `/${project.slug}/`}>{project.stage === "coming_soon" ? "Ask about this direction" : "Read more"} <ArrowUpRight size={16} /></Link></article>)}</div>;
+  return <div className="featured-grid" data-home-project-track>{projects.map((project, index) => <article className={`featured-project project-tone-${(index % 3) + 1}`} data-reveal key={project.id}><div className="project-preview">{project.imageUrl || project.imageUrlDark ? <ThemeImage lightSrc={project.imageUrl} darkSrc={project.imageUrlDark} alt={project.title} /> : <><span className="preview-bar" /><span className="preview-panel preview-panel-main" /><span className="preview-panel preview-panel-side" /></>}<b>{String(index + 1).padStart(2, "0")}</b></div><div className="project-card-copy"><span>{project.stage === "coming_soon" ? "Coming soon" : project.label}</span><h3>{project.title}</h3><p>{project.summary}</p></div><Link href={project.stage === "coming_soon" ? "/contact/" : `/${project.slug}/`}>{project.stage === "coming_soon" ? "Ask about this direction" : "Read more"} <ArrowUpRight size={16} /></Link></article>)}</div>;
 }
 
 export function HomeServicesSection() {
