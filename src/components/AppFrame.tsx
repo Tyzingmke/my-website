@@ -14,8 +14,9 @@ import { SiteTheme } from "@/components/SiteTheme";
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
+  const isPrivatePage = pathname?.startsWith("/niche");
 
-  if (isAdmin) {
+  if (isAdmin || isPrivatePage) {
     return <main id="main-content">{children}</main>;
   }
 

@@ -272,6 +272,12 @@
 .studio-theme-option strong { font-size: .9rem; }
 .studio-theme-option small { color: var(--studio-muted); font-size: .68rem; line-height: 1.45; }
 .studio-theme-settings footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--studio-muted); font-size: .68rem; }
+.studio-private-page-settings { display: grid; gap: 9px; padding: 15px; border: 1px solid var(--studio-line); background: var(--studio-panel-2); }
+.studio-private-page-settings > small { color: var(--studio-accent); font-size: .64rem; font-weight: 800; text-transform: uppercase; }
+.studio-private-page-settings > strong { font-size: .92rem; }
+.studio-private-page-settings label { display: grid; gap: 6px; color: var(--studio-muted); font-size: .68rem; font-weight: 750; }
+.studio-private-page-settings input { width: 100%; border: 1px solid var(--studio-line); outline: 0; background: var(--studio-bg); color: var(--studio-text); padding: 10px 11px; font-size: .78rem; }
+.studio-private-page-settings p { color: var(--studio-muted); font-size: .67rem; line-height: 1.5; }
 .studio-button.danger { border-color: color-mix(in srgb, var(--studio-danger) 55%, transparent); color: var(--studio-danger); }
 .studio-button.danger:hover { background: color-mix(in srgb, var(--studio-danger) 12%, transparent); }
 

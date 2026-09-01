@@ -617,6 +617,8 @@ function OperationsDashboard({ section, documents, siteEvents, submissions, asse
 function ThemeSettings({ document, onStudioTheme }: { document: CmsDocument | null; onStudioTheme: (theme: "dark" | "light") => void }) {
   const initialTheme = document?.draft_body.theme === "light" ? "light" : "dark";
   const [theme, setTheme] = useState<"dark" | "light">(initialTheme);
+  const [nicheQuestion, setNicheQuestion] = useState(String(document?.draft_body.nicheQuestion ?? "What is my reference to you?"));
+  const [nichePassword, setNichePassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const selectTheme = (nextTheme: "dark" | "light") => { setTheme(nextTheme); onStudioTheme(nextTheme); };
@@ -624,11 +626,20 @@ function ThemeSettings({ document, onStudioTheme }: { document: CmsDocument | nu
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !document) return;
     setSaving(true); setMessage("");
-    const { data, error } = await supabase.functions.invoke("studio-cms", { body: { action: "save-document", id: document.id, version: document.version, title: document.title, slug: document.slug, draft_body: { ...(document.draft_body ?? {}), theme }, publish: true } });
+    const { data, error } = await supabase.functions.invoke("studio-cms", { body: { action: "save-document", id: document.id, version: document.version, title: document.title, slug: document.slug, draft_body: { ...(document.draft_body ?? {}), theme, nicheQuestion: nicheQuestion.trim() || "What is my reference to you?" }, publish: true } });
+    if (!error && data?.ok && nichePassword.trim()) {
+      const passwordBytes = new TextEncoder().encode(nichePassword.trim().toLowerCase());
+      const passwordDigest = await crypto.subtle.digest("SHA-256", passwordBytes);
+      const nichePasswordHash = Array.from(new Uint8Array(passwordDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const { data: workspace } = await supabase.from("workspaces").select("settings").eq("id", document.workspace_id).maybeSingle();
+      const { error: workspaceError } = await supabase.from("workspaces").update({ settings: { ...(workspace?.settings ?? {}), niche_password_hash: nichePasswordHash } }).eq("id", document.workspace_id);
+      if (workspaceError) { setSaving(false); setMessage(workspaceError.message); return; }
+      setNichePassword("");
+    }
     setSaving(false);
-    setMessage(error?.message ?? data?.error ?? (data?.ok ? "Theme saved. New public visits use this default across the site." : "Theme could not be saved."));
+    setMessage(error?.message ?? data?.error ?? (data?.ok ? "Settings saved. The private page question is live and its answer remains protected." : "Settings could not be saved."));
   };
-  return <div className="studio-operations"><div className="studio-editor-heading"><div><small>Workspace settings</small><h1>Site-wide theme</h1><p>Choose the default appearance for every public page. Visitors can still use the theme control in the site header.</p></div></div><section className="studio-theme-settings"><header><strong>Default public website appearance</strong><p>Dark and light image variants in every CMS block respond to this setting automatically.</p></header><div className="studio-theme-options"><button className={`studio-theme-option${theme === "dark" ? " active" : ""}`} type="button" onClick={() => selectTheme("dark")}><Moon /><strong>Dark theme</strong><small>Deep editorial background and dark-mode image assets.</small></button><button className={`studio-theme-option${theme === "light" ? " active" : ""}`} type="button" onClick={() => selectTheme("light")}><Sun /><strong>Light theme</strong><small>Bright paper surfaces and light-mode image assets.</small></button></div><footer><span>{message || (document ? "Save to publish this site default." : "The settings document is not available yet.")}</span><button className="studio-button primary" type="button" disabled={!document || saving} onClick={() => void save()}>{saving ? <LoaderCircle className="spin" /> : <Save />} Save site theme</button></footer></section></div>;
+  return <div className="studio-operations"><div className="studio-editor-heading"><div><small>Workspace settings</small><h1>Site-wide settings</h1><p>Choose the public theme and control the private Niche page without placing its answer in page code.</p></div></div><section className="studio-theme-settings"><header><strong>Default public website appearance</strong><p>Dark and light image variants in every CMS block respond to this setting automatically.</p></header><div className="studio-theme-options"><button className={`studio-theme-option${theme === "dark" ? " active" : ""}`} type="button" onClick={() => selectTheme("dark")}><Moon /><strong>Dark theme</strong><small>Deep editorial background and dark-mode image assets.</small></button><button className={`studio-theme-option${theme === "light" ? " active" : ""}`} type="button" onClick={() => selectTheme("light")}><Sun /><strong>Light theme</strong><small>Bright paper surfaces and light-mode image assets.</small></button></div><div className="studio-private-page-settings"><small>Private page</small><strong>Niche unlock</strong><label>Unlock question<input value={nicheQuestion} onChange={(event) => setNicheQuestion(event.target.value)} /></label><label>New unlock answer<input type="password" autoComplete="new-password" value={nichePassword} onChange={(event) => setNichePassword(event.target.value)} placeholder="Leave empty to keep the current answer" /></label><p>The question is shown at <code>/niche/</code>. Only a SHA-256 hash of a new answer is stored in private workspace settings.</p></div><footer><span>{message || (document ? "Save to publish your changes." : "The settings document is not available yet.")}</span><button className="studio-button primary" type="button" disabled={!document || saving} onClick={() => void save()}>{saving ? <LoaderCircle className="spin" /> : <Save />} Save settings</button></footer></section></div>;
 }
 
 function Inspector({ document, membership, connection }: { document: CmsDocument | null; membership: WorkspaceMembership | null; connection: ConnectionState }) {
