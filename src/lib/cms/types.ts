@@ -69,6 +69,17 @@ export type FormSubmission = {
   created_at: string;
 };
 
+export type MediaAsset = {
+  id: string;
+  workspace_id: string;
+  storage_path: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  alt_text: string;
+  created_at: string;
+};
+
 export type AuditEvent = {
   id: number;
   workspace_id: string;

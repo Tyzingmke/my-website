@@ -287,6 +287,14 @@
 .studio-inbox-list p { color: var(--studio-muted); font-size: .76rem; line-height: 1.55; }
 .studio-inbox-list p:last-of-type { color: var(--studio-text); }
 .studio-inbox-list footer { padding-top: 9px; border-top: 1px solid var(--studio-line); }
+.studio-assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 10px; }
+.studio-assets-grid > article { overflow: hidden; border: 1px solid var(--studio-line); background: var(--studio-panel); }
+.studio-assets-grid a { display: block; aspect-ratio: 4 / 3; background: var(--studio-panel-2); }
+.studio-assets-grid img { width: 100%; height: 100%; object-fit: cover; transition: transform 180ms ease; }
+.studio-assets-grid a:hover img { transform: scale(1.04); }
+.studio-assets-grid > article > div { display: grid; gap: 5px; padding: 11px; }
+.studio-assets-grid strong { overflow: hidden; font-size: .74rem; text-overflow: ellipsis; white-space: nowrap; }
+.studio-assets-grid small { color: var(--studio-muted); font-size: .62rem; }
 .studio-inbox-actions { display: flex; align-items: center; gap: 7px; }
 .studio-delete-button { width: 29px; height: 29px; color: var(--studio-danger); }
 .studio-delete-button:hover { border-color: color-mix(in srgb, var(--studio-danger) 60%, transparent); background: color-mix(in srgb, var(--studio-danger) 10%, transparent); }
