@@ -276,7 +276,8 @@
 .studio-private-page-settings > small { color: var(--studio-accent); font-size: .64rem; font-weight: 800; text-transform: uppercase; }
 .studio-private-page-settings > strong { font-size: .92rem; }
 .studio-private-page-settings label { display: grid; gap: 6px; color: var(--studio-muted); font-size: .68rem; font-weight: 750; }
-.studio-private-page-settings input { width: 100%; border: 1px solid var(--studio-line); outline: 0; background: var(--studio-bg); color: var(--studio-text); padding: 10px 11px; font-size: .78rem; }
+.studio-private-page-settings input, .studio-private-page-settings textarea { width: 100%; border: 1px solid var(--studio-line); outline: 0; background: var(--studio-bg); color: var(--studio-text); padding: 10px 11px; font: inherit; font-size: .78rem; }
+.studio-private-page-settings textarea { min-height: 118px; resize: vertical; }
 .studio-private-page-settings p { color: var(--studio-muted); font-size: .67rem; line-height: 1.5; }
 .studio-button.danger { border-color: color-mix(in srgb, var(--studio-danger) 55%, transparent); color: var(--studio-danger); }
 .studio-button.danger:hover { background: color-mix(in srgb, var(--studio-danger) 12%, transparent); }
