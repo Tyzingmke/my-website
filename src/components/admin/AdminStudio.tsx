@@ -36,6 +36,7 @@ import {
   Smartphone,
   Sun,
   Trash2,
+  Upload,
   Users,
   Wrench,
   X,
@@ -308,23 +309,13 @@ export function AdminStudio() {
     setNotice("");
     const baseTitle = kind === "page" ? "New page" : kind === "project" ? "New project" : "New service";
     const slugBase = `${kind}-${Date.now().toString(36)}`;
-    const { data, error } = await supabase
-      .from("cms_documents")
-      .insert({
-        workspace_id: membership.workspace_id,
-        kind,
-        title: baseTitle,
-        slug: slugBase,
-        draft_body: { summary: "Add a concise summary for this item." },
-      })
-      .select("id, workspace_id, kind, slug, title, status, schema_version, draft_body, published_body, version, updated_at, published_at")
-      .single();
+    const { data, error } = await supabase.functions.invoke("studio-cms", { body: { action: "create-document", kind, title: baseTitle, slug: slugBase } });
     setBusy(false);
-    if (error) {
-      setNotice(error.message);
+    if (error || !data?.ok || !data.document) {
+      setNotice(data?.error ?? error?.message ?? "The project could not be created.");
       return;
     }
-    const document = data as CmsDocument;
+    const document = data.document as CmsDocument;
     setDocuments((current) => [document, ...current]);
     setSelectedId(document.id);
     setNotice("New draft created. Give it a title, URL and summary before saving.");
@@ -345,6 +336,52 @@ export function AdminStudio() {
     }
     setSubmissions((current) => current.filter((submission) => submission.id !== id));
     setNotice("Enquiry deleted.");
+  }
+
+  async function uploadImage(file: File) {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !membership || !hasCapability(membership, "asset.manage")) return null;
+    if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
+      setNotice("Use an image smaller than 10 MB.");
+      return null;
+    }
+    const filename = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
+    const storagePath = `${membership.workspace_id}/projects/${crypto.randomUUID()}-${filename}`;
+    setBusy(true);
+    setNotice("");
+    const { error: uploadError } = await supabase.storage.from("portfolio-assets").upload(storagePath, file, { cacheControl: "31536000", upsert: false });
+    if (uploadError) {
+      setBusy(false);
+      setNotice(uploadError.message);
+      return null;
+    }
+    const { data: publicUrl } = supabase.storage.from("portfolio-assets").getPublicUrl(storagePath);
+    const { error: assetError } = await supabase.from("media_assets").insert({ workspace_id: membership.workspace_id, storage_path: storagePath, filename: file.name, mime_type: file.type, size_bytes: file.size, alt_text: "" });
+    setBusy(false);
+    if (assetError) {
+      await supabase.storage.from("portfolio-assets").remove([storagePath]);
+      setNotice(assetError.message);
+      return null;
+    }
+    setNotice("Image uploaded securely to the workspace asset library.");
+    return publicUrl.publicUrl;
+  }
+
+  async function deleteDocument(id: string) {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !membership || !hasCapability(membership, "page.publish")) return;
+    if (!window.confirm("Delete this project permanently? Its public project page will no longer be available.")) return;
+    setBusy(true);
+    setNotice("");
+    const { data, error } = await supabase.functions.invoke("studio-cms", { body: { action: "delete-document", id } });
+    setBusy(false);
+    if (error || !data?.ok) {
+      setNotice(data?.error ?? error?.message ?? "The project could not be deleted.");
+      return;
+    }
+    setDocuments((current) => current.filter((document) => document.id !== id));
+    setSelectedId((current) => current === id ? "" : current);
+    setNotice("Project deleted.");
   }
 
   function chooseSection(next: AdminSection) {
@@ -405,7 +442,7 @@ export function AdminStudio() {
         <main className="studio-canvas-area">
           {connection === "checking" ? <CenteredState icon={LoaderCircle} spin title="Opening your workspace" body="Checking the local session and secure workspace membership." /> : null}
           {connection === "setup" ? <SetupState /> : null}
-          {connection === "ready" || connection === "setup" ? section === "code" ? <CodeWorkspace enabled={connection === "ready" && hasCapability(membership, "integration.manage")} theme={theme} /> : <StudioCanvas section={section} document={selected} documents={documents} siteEvents={siteEvents} submissions={submissions} auditEvents={auditEvents} members={members} viewport={viewport} readOnly={isReadOnly} notice={notice} canManageInbox={hasCapability(membership, "form.manage")} onDeleteSubmission={(id) => void deleteSubmission(id)} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
+          {connection === "ready" || connection === "setup" ? section === "code" ? <CodeWorkspace enabled={connection === "ready" && hasCapability(membership, "integration.manage")} theme={theme} /> : <StudioCanvas section={section} document={selected} documents={documents} siteEvents={siteEvents} submissions={submissions} auditEvents={auditEvents} members={members} viewport={viewport} readOnly={isReadOnly} notice={notice} canManageInbox={hasCapability(membership, "form.manage")} canManageAssets={hasCapability(membership, "asset.manage")} canDeleteDocuments={hasCapability(membership, "page.publish")} onDeleteSubmission={(id) => void deleteSubmission(id)} onDeleteDocument={(id) => void deleteDocument(id)} onUploadImage={uploadImage} onUpdate={updateSelected} onBodyUpdate={updateSelectedBody} onSave={() => void saveSelected(false)} onPublish={() => void saveSelected(true)} /> : null}
         </main>
 
         <aside className="studio-inspector">
@@ -426,7 +463,7 @@ function LoginState({ email, password, message, busy, onEmail, onPassword, onSub
   return <main className="studio-auth-wrap"><form className="studio-auth-card" onSubmit={onSubmit}><div className="studio-auth-brand"><span className="studio-mark" aria-hidden="true">TC</span><div><small>Tony Consults</small><strong>Studio</strong></div></div><span className="studio-auth-icon"><LockKeyhole /></span><small className="studio-auth-kicker">Private workspace</small><h1>Welcome back.</h1><p>Sign in to manage pages, projects, services, and publishing for Tony Consults.</p><label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => onEmail(event.target.value)} required /></label><label>Password<input type="password" minLength={8} autoComplete="current-password" value={password} onChange={(event) => onPassword(event.target.value)} required /></label>{message ? <div className="studio-alert">{message}</div> : null}<button className="studio-button primary wide" disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <ShieldCheck />}Sign in to Studio</button><span className="studio-auth-footnote"><ShieldCheck /> Secured with workspace access control</span></form></main>;
 }
 
-function StudioCanvas({ section, document, documents, siteEvents, submissions, auditEvents, members, viewport, readOnly, notice, canManageInbox, onDeleteSubmission, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; documents: CmsDocument[]; siteEvents: SiteEvent[]; submissions: FormSubmission[]; auditEvents: AuditEvent[]; members: WorkspaceMemberRecord[]; viewport: ViewportMode; readOnly: boolean; notice: string; canManageInbox: boolean; onDeleteSubmission: (id: string) => void; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
+function StudioCanvas({ section, document, documents, siteEvents, submissions, auditEvents, members, viewport, readOnly, notice, canManageInbox, canManageAssets, canDeleteDocuments, onDeleteSubmission, onDeleteDocument, onUploadImage, onUpdate, onBodyUpdate, onSave, onPublish }: { section: AdminSection; document: CmsDocument | null; documents: CmsDocument[]; siteEvents: SiteEvent[]; submissions: FormSubmission[]; auditEvents: AuditEvent[]; members: WorkspaceMemberRecord[]; viewport: ViewportMode; readOnly: boolean; notice: string; canManageInbox: boolean; canManageAssets: boolean; canDeleteDocuments: boolean; onDeleteSubmission: (id: string) => void; onDeleteDocument: (id: string) => void; onUploadImage: (file: File) => Promise<string | null>; onUpdate: (field: "title" | "slug" | "summary" | "body", value: string) => void; onBodyUpdate: (body: CmsDocumentBody) => void; onSave: () => void; onPublish: () => void }) {
   const [mode, setMode] = useState<EditorMode>("blocks");
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
@@ -459,7 +496,7 @@ function StudioCanvas({ section, document, documents, siteEvents, submissions, a
     }
   };
 
-  return <div className="studio-editor"><div className="studio-editor-heading"><div><small>{document.kind} editor</small><h1>{document.title}</h1><p>Build the same editorial structure used by the public page. Changes update this preview immediately and are saved as a revision.</p></div><div className="studio-editor-actions"><span className={`studio-pill status-${document.status}`}>{document.status}</span><button className="studio-button secondary" disabled={readOnly} onClick={onSave}><Save /> Save draft</button><button className="studio-button primary" disabled={readOnly} onClick={onPublish}><Rocket /> Publish</button></div></div>{notice ? <div className="studio-notice"><Check />{notice}</div> : null}<div className="studio-mode-switch" role="tablist" aria-label="Editing mode"><button className={mode === "blocks" ? "active" : ""} type="button" role="tab" aria-selected={mode === "blocks"} onClick={() => setMode("blocks")}><LayoutDashboard /> Visual blocks</button><button className={mode === "code" ? "active" : ""} type="button" role="tab" aria-selected={mode === "code"} onClick={() => { setCode(JSON.stringify(document.draft_body, null, 2)); setCodeError(""); setMode("code"); }}><Code2 /> Content JSON</button></div><div className={`studio-preview-frame viewport-${viewport}`}><div className="studio-preview-toolbar"><i /><i /><i /><span>tonyconsults.co.ke/{document.slug}</span></div><PageCompositionPreview document={document} blocks={blocks} /></div>{mode === "blocks" ? <section className="studio-block-editor"><div className="studio-section-heading"><div><small>Page composition</small><h2>Editable sections</h2></div><span>{blocks.length} blocks</span></div><div className="studio-page-basics"><label>Page title<input value={document.title} disabled={readOnly} onChange={(event) => onUpdate("title", event.target.value)} /></label><label>URL slug<input value={document.slug} disabled={readOnly} onChange={(event) => onUpdate("slug", event.target.value)} /></label></div><div className="studio-block-list">{blocks.map((block, index) => <ContentBlockEditor block={block} index={index} readOnly={readOnly} onUpdate={updateBlock} onItems={updateItems} onRemove={removeBlock} />)}</div><div className="studio-add-blocks"><span>Add a section</span>{(Object.keys(BLOCK_TITLES) as CmsContentBlockType[]).map((type) => <button key={type} type="button" disabled={readOnly} onClick={() => addBlock(type)}><Plus /> {BLOCK_TITLES[type]}</button>)}</div></section> : <section className="studio-code-editor"><div className="studio-section-heading"><div><small>Advanced editing</small><h2>Page content JSON</h2></div><span>Layout code stays protected</span></div><p>Use this for exact content changes, links, and block settings. It edits the same data as the visual blocks, not the website source code.</p><textarea spellCheck={false} value={code} disabled={readOnly} onChange={(event) => { setCode(event.target.value); setCodeError(""); }} /><div className="studio-code-actions"><small>{codeError || "Valid JSON is applied only when you choose Apply changes."}</small><button className="studio-button secondary" type="button" disabled={readOnly} onClick={applyCode}><Code2 /> Apply changes</button></div></section>}</div>;
+  return <div className="studio-editor"><div className="studio-editor-heading"><div><small>{document.kind} editor</small><h1>{document.title}</h1><p>Build the same editorial structure used by the public page. Changes update this preview immediately and are saved as a revision.</p></div><div className="studio-editor-actions"><span className={`studio-pill status-${document.status}`}>{document.status}</span>{document.kind === "project" && canDeleteDocuments ? <button className="studio-button danger" disabled={readOnly} onClick={() => onDeleteDocument(document.id)}><Trash2 /> Delete</button> : null}<button className="studio-button secondary" disabled={readOnly} onClick={onSave}><Save /> Save draft</button><button className="studio-button primary" disabled={readOnly} onClick={onPublish}><Rocket /> Publish</button></div></div>{notice ? <div className="studio-notice"><Check />{notice}</div> : null}<div className="studio-mode-switch" role="tablist" aria-label="Editing mode"><button className={mode === "blocks" ? "active" : ""} type="button" role="tab" aria-selected={mode === "blocks"} onClick={() => setMode("blocks")}><LayoutDashboard /> Visual blocks</button><button className={mode === "code" ? "active" : ""} type="button" role="tab" aria-selected={mode === "code"} onClick={() => { setCode(JSON.stringify(document.draft_body, null, 2)); setCodeError(""); setMode("code"); }}><Code2 /> Content JSON</button></div><div className={`studio-preview-frame viewport-${viewport}`}><div className="studio-preview-toolbar"><i /><i /><i /><span>tonyconsults.co.ke/{document.slug}</span></div><PageCompositionPreview document={document} blocks={blocks} /></div>{mode === "blocks" ? <section className="studio-block-editor"><div className="studio-section-heading"><div><small>Page composition</small><h2>Editable sections</h2></div><span>{blocks.length} blocks</span></div><div className="studio-page-basics"><label>Page title<input value={document.title} disabled={readOnly} onChange={(event) => onUpdate("title", event.target.value)} /></label><label>URL slug<input value={document.slug} disabled={readOnly} onChange={(event) => onUpdate("slug", event.target.value)} /></label></div>{document.kind === "project" ? <div className="studio-project-settings"><label>Card label<input value={String(document.draft_body.cardLabel ?? document.draft_body.eyebrow ?? "Project")} disabled={readOnly} onChange={(event) => onBodyUpdate({ ...document.draft_body, cardLabel: event.target.value })} /></label><label>Card stage<select value={String(document.draft_body.stage ?? "live")} disabled={readOnly} onChange={(event) => onBodyUpdate({ ...document.draft_body, stage: event.target.value })}><option value="live">Live project</option><option value="coming_soon">Coming soon</option></select></label><label className="field-wide">Card tags, one per line<textarea rows={3} value={Array.isArray(document.draft_body.tags) ? document.draft_body.tags.join("\n") : ""} disabled={readOnly} onChange={(event) => onBodyUpdate({ ...document.draft_body, tags: event.target.value.split("\n").map((tag) => tag.trim()).filter(Boolean) })} /></label></div> : null}<div className="studio-block-list">{blocks.map((block, index) => <ContentBlockEditor block={block} index={index} readOnly={readOnly} canUpload={canManageAssets} onUpdate={updateBlock} onItems={updateItems} onRemove={removeBlock} onUploadImage={onUploadImage} />)}</div><div className="studio-add-blocks"><span>Add a section</span>{(Object.keys(BLOCK_TITLES) as CmsContentBlockType[]).map((type) => <button key={type} type="button" disabled={readOnly} onClick={() => addBlock(type)}><Plus /> {BLOCK_TITLES[type]}</button>)}</div></section> : <section className="studio-code-editor"><div className="studio-section-heading"><div><small>Advanced editing</small><h2>Page content JSON</h2></div><span>Layout code stays protected</span></div><p>Use this for exact content changes, links, and block settings. It edits the same data as the visual blocks, not the website source code.</p><textarea spellCheck={false} value={code} disabled={readOnly} onChange={(event) => { setCode(event.target.value); setCodeError(""); }} /><div className="studio-code-actions"><small>{codeError || "Valid JSON is applied only when you choose Apply changes."}</small><button className="studio-button secondary" type="button" disabled={readOnly} onClick={applyCode}><Code2 /> Apply changes</button></div></section>}</div>;
 }
 
 function PageCompositionPreview({ document, blocks }: { document: CmsDocument; blocks: CmsContentBlock[] }) {
@@ -467,8 +504,14 @@ function PageCompositionPreview({ document, blocks }: { document: CmsDocument; b
   return <article className="studio-page-preview">{hero?.imageUrl ? <img className="studio-preview-image" src={hero.imageUrl} alt="" /> : null}<span>{hero?.eyebrow ?? document.kind}</span><h2>{hero?.heading ?? document.title}</h2><p>{hero?.body ?? document.draft_body.summary ?? "Add a concise description."}</p>{blocks.slice(1, 4).map((block) => <section className={`studio-preview-block type-${block.type}`} key={block.id}>{block.imageUrl ? <img className="studio-preview-block-image" src={block.imageUrl} alt="" /> : null}<small>{block.label}</small><strong>{block.heading}</strong>{block.body ? <p>{block.body}</p> : null}{block.items?.length ? <div>{block.items.slice(0, 3).map((item) => <span key={item}>{item}</span>)}</div> : null}</section>)}</article>;
 }
 
-function ContentBlockEditor({ block, index, readOnly, onUpdate, onItems, onRemove }: { block: CmsContentBlock; index: number; readOnly: boolean; onUpdate: (id: string, field: EditableBlockField, value: string) => void; onItems: (id: string, value: string) => void; onRemove: (id: string) => void }) {
-  return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Image URL<input type="url" value={block.imageUrl ?? ""} placeholder="https://... or /images/..." disabled={readOnly} onChange={(event) => onUpdate(block.id, "imageUrl", event.target.value)} /></label><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
+function ContentBlockEditor({ block, index, readOnly, canUpload, onUpdate, onItems, onRemove, onUploadImage }: { block: CmsContentBlock; index: number; readOnly: boolean; canUpload: boolean; onUpdate: (id: string, field: EditableBlockField, value: string) => void; onItems: (id: string, value: string) => void; onRemove: (id: string) => void; onUploadImage: (file: File) => Promise<string | null> }) {
+  return <article className="studio-content-block"><header><span>0{index + 1}</span><div><small>{BLOCK_TITLES[block.type]}</small><strong>{block.label}</strong></div><button type="button" disabled={readOnly} aria-label={`Remove ${block.label}`} onClick={() => onRemove(block.id)}><X /></button></header><div className="studio-field-grid"><label>Section label<input value={block.label} disabled={readOnly} onChange={(event) => onUpdate(block.id, "label", event.target.value)} /></label><label>Eyebrow<input value={block.eyebrow ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "eyebrow", event.target.value)} /></label><label className="field-wide">Heading<input value={block.heading ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "heading", event.target.value)} /></label><label className="field-wide">Image URL<input type="url" value={block.imageUrl ?? ""} placeholder="https://... or /images/..." disabled={readOnly} onChange={(event) => onUpdate(block.id, "imageUrl", event.target.value)} /></label><ImageUpload disabled={readOnly || !canUpload} onUploaded={(url) => onUpdate(block.id, "imageUrl", url)} onUploadImage={onUploadImage} /><label className="field-wide">Supporting copy<textarea rows={3} value={block.body ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "body", event.target.value)} /></label>{block.type === "features" || block.type === "collection" ? <label className="field-wide">Items, one per line<textarea rows={4} value={(block.items ?? []).join("\n")} disabled={readOnly} onChange={(event) => onItems(block.id, event.target.value)} /></label> : null}<label>Button label<input value={block.ctaLabel ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaLabel", event.target.value)} /></label><label>Button link<input value={block.ctaHref ?? ""} disabled={readOnly} onChange={(event) => onUpdate(block.id, "ctaHref", event.target.value)} /></label></div></article>;
+}
+
+function ImageUpload({ disabled, onUploaded, onUploadImage }: { disabled: boolean; onUploaded: (url: string) => void; onUploadImage: (file: File) => Promise<string | null> }) {
+  const [uploading, setUploading] = useState(false);
+  const accept = async (file?: File) => { if (!file || disabled) return; setUploading(true); const url = await onUploadImage(file); setUploading(false); if (url) onUploaded(url); };
+  return <label className="studio-image-upload field-wide" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void accept(event.dataTransfer.files[0]); }}><Upload /><span><strong>{uploading ? "Uploading image..." : "Drop a project image here"}</strong><small>or browse for JPG, PNG, WebP, AVIF or SVG up to 10 MB</small></span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml" disabled={disabled || uploading} onChange={(event) => void accept(event.target.files?.[0])} /></label>;
 }
 
 const codeGroups = [

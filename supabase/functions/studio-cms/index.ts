@@ -17,7 +17,19 @@ type DeleteSubmissionInput = {
   id: string;
 };
 
-type StudioInput = SaveDocumentInput | DeleteSubmissionInput;
+type DeleteDocumentInput = {
+  action: "delete-document";
+  id: string;
+};
+
+type CreateDocumentInput = {
+  action: "create-document";
+  kind: "page" | "project" | "service";
+  title: string;
+  slug: string;
+};
+
+type StudioInput = SaveDocumentInput | DeleteSubmissionInput | DeleteDocumentInput | CreateDocumentInput;
 
 const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -75,6 +87,58 @@ Deno.serve(async (request) => {
       metadata: { form_key: "contact" },
     });
     return json({ ok: true });
+  }
+
+  if (body?.action === "delete-document") {
+    if (!may(membership, "page.publish")) return json({ ok: false, error: "You do not have permission to delete projects." }, 403);
+    if (!body.id) return json({ ok: false, error: "A project is required." }, 400);
+    const { data: document, error } = await service
+      .from("cms_documents")
+      .delete()
+      .eq("id", body.id)
+      .eq("workspace_id", membership.workspace_id)
+      .eq("kind", "project")
+      .select("id, slug, title")
+      .maybeSingle();
+    if (error) return json({ ok: false, error: error.message }, 400);
+    if (!document) return json({ ok: false, error: "This project no longer exists." }, 404);
+    await service.from("audit_events").insert({
+      workspace_id: membership.workspace_id,
+      actor_id: userData.user.id,
+      action: "project.deleted",
+      entity_type: "cms_document",
+      entity_id: body.id,
+      metadata: { slug: document.slug, title: document.title },
+    });
+    return json({ ok: true });
+  }
+
+  if (body?.action === "create-document") {
+    if (!may(membership, "page.edit")) return json({ ok: false, error: "You do not have permission to create projects." }, 403);
+    if (!body.title?.trim() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body.slug ?? "")) return json({ ok: false, error: "A title and valid URL slug are required." }, 400);
+    const { data: document, error } = await service
+      .from("cms_documents")
+      .insert({
+        workspace_id: membership.workspace_id,
+        kind: body.kind,
+        title: body.title.trim(),
+        slug: body.slug,
+        draft_body: { summary: "Add a concise summary for this item." },
+        created_by: userData.user.id,
+        updated_by: userData.user.id,
+      })
+      .select("id, workspace_id, kind, slug, title, status, schema_version, draft_body, published_body, version, updated_at, published_at")
+      .single();
+    if (error) return json({ ok: false, error: error.message }, 400);
+    await service.from("audit_events").insert({
+      workspace_id: membership.workspace_id,
+      actor_id: userData.user.id,
+      action: "document.created",
+      entity_type: "cms_document",
+      entity_id: document.id,
+      metadata: { slug: document.slug, title: document.title, kind: document.kind },
+    });
+    return json({ ok: true, document });
   }
 
   if (body?.action !== "save-document" || !body.id || !body.title?.trim() || !body.slug?.trim()) return json({ ok: false, error: "A document, title and URL slug are required." }, 400);

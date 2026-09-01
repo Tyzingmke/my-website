@@ -1051,7 +1051,7 @@ export function MotionProvider() {
         const section = document.querySelector<HTMLElement>("[data-project-rail]");
         const pin = document.querySelector<HTMLElement>("[data-project-pin]");
         if (!track || !section || !pin) return;
-        const distance = () => Math.max(track.scrollWidth - innerWidth + innerWidth * 0.08, 0);
+        const distance = () => Math.max(track.scrollWidth - (innerWidth - track.offsetLeft) + innerWidth * 0.08, 0);
         const tween = gsap.to(track, {
           x: () => -distance(),
           ease: "none",
