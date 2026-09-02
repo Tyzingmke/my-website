@@ -20,7 +20,7 @@ Deno.serve(async (request) => {
   const service = createClient(url, serviceKey);
   const { data: owner } = await service.from("universe_members").select("space_id").eq("space_id", body.spaceId).eq("user_id", user.id).eq("role", "owner").maybeSingle();
   if (!owner) return reply({ ok: false, error: "Only the space owner can invite a partner." }, 403);
-  const { data: invitation, error: invitationError } = await service.auth.admin.inviteUserByEmail(body.email.trim().toLowerCase(), { redirectTo: "https://www.tonyconsults.co.ke/us/" });
+  const { data: invitation, error: invitationError } = await service.auth.admin.inviteUserByEmail(body.email.trim().toLowerCase(), { redirectTo: "https://www.tonyconsults.co.ke/us/set-password/" });
   if (invitationError || !invitation.user) return reply({ ok: false, error: invitationError?.message ?? "Could not create invitation." }, 400);
   const { error: membershipError } = await service.from("universe_members").upsert({ space_id: body.spaceId, user_id: invitation.user.id, role: "partner", shell: "romantic", display_name: body.displayName?.trim() || "Stargazer" }, { onConflict: "space_id,user_id" });
   if (membershipError) return reply({ ok: false, error: membershipError.message }, 400);

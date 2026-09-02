@@ -24,8 +24,8 @@ export default function HiddenEntryPage() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !email) { setMessage("Enter the approved email address first."); return; }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/us` } });
-    setMessage(error ? error.message : "A secure sign-in link has been sent."); setBusy(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/us/set-password` });
+    setMessage(error ? error.message : "A secure password setup link has been sent."); setBusy(false);
   }
   return <main className={`${styles.universe} ${styles.entry}`}>
     <div className={styles.entryAura} />
@@ -39,7 +39,7 @@ export default function HiddenEntryPage() {
         {message && <p className={styles.formMessage} role="status">{message}</p>}
         <button className={styles.primaryButton} disabled={busy}><KeyRound size={17} /> {busy ? "Opening..." : "Enter your space"}<ArrowUpRight size={16} /></button>
       </form>
-      <button type="button" className={styles.textButton} onClick={sendLink} disabled={busy}><Mail size={16} /> Send me a secure sign-in link</button>
+      <button type="button" className={styles.textButton} onClick={sendLink} disabled={busy}><Mail size={16} /> Create or reset my password</button>
     </section>
   </main>;
 }
