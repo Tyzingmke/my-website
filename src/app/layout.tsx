@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { PlatformTransition } from "@/components/PlatformTransition";
 
 export const metadata: Metadata = {
   title: "Tony Consults Platform",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body><PlatformTransition>{children}</PlatformTransition></body></html>;
 }

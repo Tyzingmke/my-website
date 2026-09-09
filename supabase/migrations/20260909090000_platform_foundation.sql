@@ -111,13 +111,15 @@ create index platform_content_public_idx on public.platform_content (workspace_i
 create index platform_tickets_workspace_idx on public.platform_tickets (workspace_id, status, updated_at desc);
 create index platform_orders_buyer_idx on public.platform_orders (buyer_id, created_at desc);
 
-create or replace function public.platform_is_member(target_workspace uuid)
-returns boolean language sql stable security definer set search_path = public as $$
+create schema if not exists private;
+
+create or replace function private.platform_is_member(target_workspace uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
   select exists(select 1 from public.platform_memberships where workspace_id = target_workspace and user_id = (select auth.uid()) and status = 'active')
 $$;
 
-create or replace function public.platform_can(target_workspace uuid, required_capability text)
-returns boolean language sql stable security definer set search_path = public as $$
+create or replace function private.platform_can(target_workspace uuid, required_capability text)
+returns boolean language sql stable security definer set search_path = '' as $$
   select exists(select 1 from public.platform_memberships where workspace_id = target_workspace and user_id = (select auth.uid()) and status = 'active' and (role in ('owner', 'admin') or required_capability = any(capabilities)))
 $$;
 
@@ -129,9 +131,10 @@ create trigger platform_content_touch before update on public.platform_content f
 create trigger platform_products_touch before update on public.platform_products for each row execute function public.platform_touch_updated_at();
 create trigger platform_tickets_touch before update on public.platform_tickets for each row execute function public.platform_touch_updated_at();
 
-revoke all on function public.platform_is_member(uuid) from public;
-revoke all on function public.platform_can(uuid, text) from public;
-grant execute on function public.platform_is_member(uuid), public.platform_can(uuid, text) to authenticated;
+revoke all on function private.platform_is_member(uuid) from public;
+revoke all on function private.platform_can(uuid, text) from public;
+grant usage on schema private to authenticated;
+grant execute on function private.platform_is_member(uuid), private.platform_can(uuid, text) to authenticated;
 
 alter table public.platform_workspaces enable row level security;
 alter table public.platform_profiles enable row level security;
@@ -143,24 +146,24 @@ alter table public.platform_ticket_messages enable row level security;
 alter table public.platform_orders enable row level security;
 alter table public.platform_audit_events enable row level security;
 
-create policy "members read their workspace" on public.platform_workspaces for select to authenticated using (public.platform_is_member(id));
+create policy "members read their workspace" on public.platform_workspaces for select to authenticated using ((select private.platform_is_member(id)));
 create policy "members read own profile" on public.platform_profiles for select to authenticated using (id = (select auth.uid()));
 create policy "members update own profile" on public.platform_profiles for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
-create policy "members read membership" on public.platform_memberships for select to authenticated using (public.platform_is_member(workspace_id));
-create policy "owners manage memberships" on public.platform_memberships for all to authenticated using (public.platform_can(workspace_id, 'people.manage')) with check (public.platform_can(workspace_id, 'people.manage'));
+create policy "members read membership" on public.platform_memberships for select to authenticated using ((select private.platform_is_member(workspace_id)));
+create policy "owners manage memberships" on public.platform_memberships for all to authenticated using ((select private.platform_can(workspace_id, 'people.manage'))) with check ((select private.platform_can(workspace_id, 'people.manage')));
 create policy "published content is public" on public.platform_content for select using (status = 'published');
-create policy "members read workspace content" on public.platform_content for select to authenticated using (public.platform_is_member(workspace_id));
-create policy "authors manage content" on public.platform_content for all to authenticated using (author_id = (select auth.uid()) and public.platform_can(workspace_id, 'content.write')) with check (author_id = (select auth.uid()) and public.platform_can(workspace_id, 'content.write'));
+create policy "members read workspace content" on public.platform_content for select to authenticated using ((select private.platform_is_member(workspace_id)));
+create policy "authors manage content" on public.platform_content for all to authenticated using ((select private.platform_can(workspace_id, 'content.write'))) with check ((select private.platform_can(workspace_id, 'content.write')));
 create policy "published products are public" on public.platform_products for select using (status = 'published');
-create policy "members read products" on public.platform_products for select to authenticated using (public.platform_is_member(workspace_id));
-create policy "sellers manage products" on public.platform_products for all to authenticated using (owner_id = (select auth.uid()) and public.platform_can(workspace_id, 'products.write')) with check (owner_id = (select auth.uid()) and public.platform_can(workspace_id, 'products.write'));
-create policy "clients see their tickets" on public.platform_tickets for select to authenticated using (client_id = (select auth.uid()) or public.platform_can(workspace_id, 'tickets.read'));
-create policy "clients create tickets" on public.platform_tickets for insert to authenticated with check (client_id = (select auth.uid()) and public.platform_is_member(workspace_id));
-create policy "staff manage tickets" on public.platform_tickets for update to authenticated using (public.platform_can(workspace_id, 'tickets.write')) with check (public.platform_can(workspace_id, 'tickets.write'));
-create policy "ticket participants read messages" on public.platform_ticket_messages for select to authenticated using (exists(select 1 from public.platform_tickets t where t.id = ticket_id and (t.client_id = (select auth.uid()) or public.platform_can(t.workspace_id, 'tickets.read'))));
-create policy "ticket participants send messages" on public.platform_ticket_messages for insert to authenticated with check (sender_id = (select auth.uid()) and exists(select 1 from public.platform_tickets t where t.id = ticket_id and (t.client_id = (select auth.uid()) or public.platform_can(t.workspace_id, 'tickets.write'))));
-create policy "buyers see own orders" on public.platform_orders for select to authenticated using (buyer_id = (select auth.uid()) or public.platform_can(workspace_id, 'orders.read'));
-create policy "staff read audit events" on public.platform_audit_events for select to authenticated using (public.platform_can(workspace_id, 'audit.read'));
+create policy "members read products" on public.platform_products for select to authenticated using ((select private.platform_is_member(workspace_id)));
+create policy "sellers manage products" on public.platform_products for all to authenticated using ((select private.platform_can(workspace_id, 'products.write'))) with check ((select private.platform_can(workspace_id, 'products.write')));
+create policy "clients see their tickets" on public.platform_tickets for select to authenticated using (client_id = (select auth.uid()) or (select private.platform_can(workspace_id, 'tickets.read')));
+create policy "clients create tickets" on public.platform_tickets for insert to authenticated with check (client_id = (select auth.uid()) and (select private.platform_is_member(workspace_id)));
+create policy "staff manage tickets" on public.platform_tickets for update to authenticated using ((select private.platform_can(workspace_id, 'tickets.write'))) with check ((select private.platform_can(workspace_id, 'tickets.write')));
+create policy "ticket participants read messages" on public.platform_ticket_messages for select to authenticated using (exists(select 1 from public.platform_tickets t where t.id = ticket_id and (t.client_id = (select auth.uid()) or (select private.platform_can(t.workspace_id, 'tickets.read')))));
+create policy "ticket participants send messages" on public.platform_ticket_messages for insert to authenticated with check (sender_id = (select auth.uid()) and exists(select 1 from public.platform_tickets t where t.id = ticket_id and (t.client_id = (select auth.uid()) or (select private.platform_can(t.workspace_id, 'tickets.write')))));
+create policy "buyers see own orders" on public.platform_orders for select to authenticated using (buyer_id = (select auth.uid()) or (select private.platform_can(workspace_id, 'orders.read')));
+create policy "staff read audit events" on public.platform_audit_events for select to authenticated using ((select private.platform_can(workspace_id, 'audit.read')));
 
 grant select on public.platform_content, public.platform_products to anon;
 grant select, insert, update, delete on public.platform_workspaces, public.platform_profiles, public.platform_memberships, public.platform_content, public.platform_products, public.platform_tickets, public.platform_ticket_messages, public.platform_orders, public.platform_audit_events to authenticated;
