@@ -1,16 +1,11 @@
-const isGitHubPages = process.env.GITHUB_PAGES === "true";
-const githubPagesBasePath = isGitHubPages ? process.env.NEXT_PUBLIC_BASE_PATH ?? "" : "";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: isGitHubPages ? "export" : undefined,
-  basePath: githubPagesBasePath,
-  assetPrefix: githubPagesBasePath,
-  devIndicators: false,
-  images: {
-    unoptimized: true
-  },
-  trailingSlash: true
+  output: "export",
+  trailingSlash: true,
+  basePath,
+  images: { unoptimized: true },
 };
 
 export default nextConfig;

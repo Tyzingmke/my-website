@@ -1,16 +1,15 @@
 {
-  "type": "module",
+  "name": "tony-consults-platform",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "vinext build",
-    "build:next": "next build",
-    "postbuild": "node scripts/prepare-sites-output.mjs",
-    "start": "vinext start"
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.4",
-    "gsap": "^3.15.0",
-    "lenis": "^1.3.25",
     "lucide-react": "^0.468.0",
     "next": "^15.1.6",
     "react": "^19.0.0",
@@ -20,11 +19,6 @@
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "@vitejs/plugin-rsc": "^0.5.28",
-    "react-server-dom-webpack": "^19.2.6",
-    "typescript": "^5.7.3",
-    "vinext": "^1.0.0-beta.2",
-    "vite": "^8.1.5"
+    "typescript": "^5.7.3"
   }
 }
